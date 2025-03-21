@@ -173,10 +173,10 @@
       
       <div class="slider-container">
         <label for="equalThickness">Equally Thick Lines:</label>
-        <input type="checkbox" id="equalThickness" checked>
+        <input type="checkbox" id="equalThickness">
       </div>
       
-      <div class="slider-container" id="globalThicknessContainer" style="display: flex;">
+      <div class="slider-container" id="globalThicknessContainer" style="display: none;">
         <label for="globalThickness">Thickness:</label>
         <input type="range" id="globalThickness" min="0.5" max="15" value="1.5" step="0.5">
         <span id="globalThicknessValue" class="value-display">1.5</span>
@@ -621,9 +621,6 @@
     
     // Initialize with the hexagon grid
     initVisualization();
-    
-    // Call toggleThicknessControls to set up the initial state
-    toggleThicknessControls();
     
     // Function to update background color
     function updateBackgroundColor(color) {
