@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .randomize-button {
+      background-color: #0BC5BA;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: background-color 0.3s;
+    }
+    
+    .randomize-button:hover {
+      background-color: #09a79e;
+    }
+    
+    .background-control {
+      width: 100%;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    
+    .color-select {
+      padding: 5px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      width: 100%;
+      height: 30px;
+    }
+    
+    .background-control-header {
+      font-weight: bold;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    
+    .control-panel {
+      width: 350px;
+      padding-right: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .visualization-panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .controls {
+      width: 100%;
+    }
+    
+    .line-control-group {
+      width: 100%;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    
+    .line-control-header {
+      font-weight: bold;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .color-preview {
+      width: 20px;
+      height: 20px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    
+    .slider-container {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .slider-container label {
+      margin-right: 10px;
+      width: 70px;
+    }
+    
+    input[type="range"] {
+      flex-grow: 1;
+    }
+    
+    .value-display {
+      margin-left: 10px;
+      width: 40px;
+      text-align: right;
+    }
+    
+    svg {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+      max-width: 100%;
+      max-height: 90vh;
+      width: 800px;
+      height: 600px;
+    }
+  </style>
+</head>
+<body>
+  <div class="control-panel">
+    <h2>Hexagon Grid Controls</h2>
+    
+    <button class="randomize-button" id="randomizeButton">Randomize All Settings</button>
+    
+    <div class="background-control">
+      <div class="background-control-header">
+        Background Color
+        <div class="color-preview" id="backgroundColorPreview" style="background-color: #FFFFFF;"></div>
+      </div>
+      
+      <div class="slider-container">
+        <label for="backgroundColor">Color:</label>
+        <select id="backgroundColor" class="color-select">
+          <option value="#FFFFFF" selected>White</option>
+          <option value="#000000">Black</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="line-control-group">
+      <div class="line-control-header">
+        Line Color (All Lines)
+        <div class="color-preview" id="globalColorPreview" style="background-color: #0BC5BA;"></div>
+      </div>
+      
+      <div class="slider-container">
+        <label for="globalColor">Color:</label>
+        <select id="globalColor" class="color-select">
+          <option value="#0BC5BA" selected>Teal</option>
+          <option value="#FF6640">Orange</option>
+          <option value="#DA9DFF">Purple</option>
+          <option value="#359DFF">Blue</option>
+          <option value="#9BA6AA">Gray</option>
+        </select>
+      </div>
+      
+      <div class="slider-container">
+        <label for="equalThickness">Equally Thick Lines:</label>
+        <input type="checkbox" id="equalThickness">
+      </div>
+      
+      <div class="slider-container" id="globalThicknessContainer" style="display: none;">
+        <label for="globalThickness">Thickness:</label>
+        <input type="range" id="globalThickness" min="0.5" max="15" value="1.5" step="0.5">
+        <span id="globalThicknessValue" class="value-display">1.5</span>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <!-- Central Lines A Controls (now using blue Y lines internally) -->
+      <div class="line-control-group">
+        <div class="line-control-header">
+          Central Lines A
+          <div class="color-preview" id="blueYColorPreview" style="background-color: #0BC5BA;"></div>
+        </div>
+        
+        <!-- Color control removed - using global color -->
+        
+        <div class="slider-container">
+          <label for="blueYGapSize">Gap:</label>
+          <input type="range" id="blueYGapSize" min="0" max="30" value="0" step="1">
+          <span id="blueYGapSizeValue" class="value-display">0</span>
+        </div>
+        
+        <div class="slider-container">
+          <label for="blueYOpacity">Visible:</label>
+          <input type="checkbox" id="blueYOpacity" checked>
+        </div>
+        
+        <div class="slider-container">
+          <label for="blueYThickness">Thickness:</label>
+          <input type="range" id="blueYThickness" min="0.5" max="15" value="1.5" step="0.5">
+          <span id="blueYThicknessValue" class="value-display">1.5</span>
+        </div>
+      </div>
+      
+      <!-- Central Lines Y Controls (now using purple A lines internally) -->
+      <div class="line-control-group">
+        <div class="line-control-header">
+          Central Lines Y
+          <div class="color-preview" id="blueAColorPreview" style="background-color: #0BC5BA;"></div>
+        </div>
+        
+        <!-- Color control removed - using global color -->
+        
+        <div class="slider-container">
+          <label for="blueAGapSize">Gap:</label>
+          <input type="range" id="blueAGapSize" min="0" max="30" value="0" step="1">
+          <span id="blueAGapSizeValue" class="value-display">0</span>
+        </div>
+        
+        <div class="slider-container">
+          <label for="blueAOpacity">Visible:</label>
+          <input type="checkbox" id="blueAOpacity" checked>
+        </div>
+        
+        <div class="slider-container">
+          <label for="blueAThickness">Thickness:</label>
+          <input type="range" id="blueAThickness" min="0.5" max="15" value="1.5" step="0.5">
+          <span id="blueAThicknessValue" class="value-display">1.5</span>
+        </div>
+      </div>
+      
+      <!-- Edge Lines Controls (formerly Black) -->
+      <div class="line-control-group">
+        <div class="line-control-header">
+          Edge Lines
+          <div class="color-preview" id="blackColorPreview" style="background-color: #0BC5BA;"></div>
+        </div>
+        
+        <!-- Color control removed - using global color -->
+        
+        <div class="slider-container">
+          <label for="blackGapSize">Gap:</label>
+          <input type="range" id="blackGapSize" min="0" max="30" value="0" step="1">
+          <span id="blackGapSizeValue" class="value-display">0</span>
+        </div>
+        
+        <div class="slider-container">
+          <label for="blackOpacity">Visible:</label>
+          <input type="checkbox" id="blackOpacity" checked>
+        </div>
+        
+        <div class="slider-container">
+          <label for="blackThickness">Thickness:</label>
+          <input type="range" id="blackThickness" min="0.5" max="15" value="1.5" step="0.5">
+          <span id="blackThicknessValue" class="value-display">1.5</span>
+        </div>
+      </div>
+      
+      <!-- Extra Lines Controls (formerly Red) -->
+      <div class="line-control-group">
+        <div class="line-control-header">
+          Extra Lines
+          <div class="color-preview" id="redColorPreview" style="background-color: #0BC5BA;"></div>
+        </div>
+        
+        <!-- Color control removed - using global color -->
+        
+        <div class="slider-container">
+          <label for="redGapSize">Gap:</label>
+          <input type="range" id="redGapSize" min="0" max="30" value="0" step="1">
+          <span id="redGapSizeValue" class="value-display">0</span>
+        </div>
+        
+        <div class="slider-container">
+          <label for="redOpacity">Visible:</label>
+          <input type="checkbox" id="redOpacity" checked>
+        </div>
+        
+        <div class="slider-container">
+          <label for="redThickness">Thickness:</label>
+          <input type="range" id="redThickness" min="0.5" max="15" value="1" step="0.5">
+          <span id="redThicknessValue" class="value-display">1.0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="visualization-panel">
+    <svg id="hexagonSvg" width="800" height="600" viewBox="-300 -250 600 500">
+      <!-- Hexagon grid will be drawn here -->
+    </svg>
+  </div>
+  
+  <script>
+    // Configuration
+    const svg = document.getElementById('hexagonSvg');
+    const viewBox = svg.viewBox.baseVal;
+    const corners = 6;
+    
+    // Hexagon sizing
+    const hexRadius = 60; // Smaller hexagons to fit the grid
+    const hexHeight = hexRadius * 2;
+    const hexWidth = hexRadius * Math.sqrt(3);
+    
+    // Get viewport dimensions for calculating grid size
+    const viewportWidth = viewBox.width;
+    const viewportHeight = viewBox.height;
+    
+    // Line elements arrays - separate by color
+    const blueYLines = [];
+    const blueALines = [];
+    const blackLines = [];
+    const redLines = [];
+    
+    // Calculate hexagon corners for a center point
+    function calculateHexagonPoints(centerX, centerY) {
+      const points = [];
+      for (let i = 0; i < corners; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 6;
+        const x = centerX + hexRadius * Math.cos(angle);
+        const y = centerY + hexRadius * Math.sin(angle);
+        points.push({ x, y });
+      }
+      return points;
+    }
+    
+    // Calculate distance between two points
+    function distance(p1, p2) {
+      return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+    }
+    
+    // Calculate point at a certain distance from start along a line to end
+    function pointAtDistance(start, end, dist) {
+      const totalDist = distance(start, end);
+      const ratio = dist / totalDist;
+      
+      return {
+        x: start.x + (end.x - start.x) * ratio,
+        y: start.y + (end.y - start.y) * ratio
+      };
+    }
+    
+    // Create a single hexagon with all three types of lines
+    function createHexagon(centerX, centerY) {
+      const hexPoints = calculateHexagonPoints(centerX, centerY);
+      const center = { x: centerX, y: centerY };
+      const hexBlueYLines = [];
+      const hexBlueALines = [];
+      const hexBlackLines = [];
+      const hexRedLines = [];
+      
+      // Create blue lines from center to corners, split into Y and A groups
+      for (let i = 0; i < corners; i++) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', center.x);
+        line.setAttribute('y1', center.y);
+        line.setAttribute('x2', hexPoints[i].x);
+        line.setAttribute('y2', hexPoints[i].y);
+        
+        // Based on the analysis of the hexagon corner positions:
+        // Y group:
+        // - Index 1: top-right (30°)
+        // - Index 3: top-left (150°)
+        // - Index 5: bottom (270°)
+        // A group:
+        // - Index 0: bottom-right (-30°)
+        // - Index 2: top (90°)
+        // - Index 4: bottom-left (210°)
+        if (i === 1 || i === 3 || i === 5) {
+          line.setAttribute('stroke', '#0BC5BA'); // Teal color for Y lines
+          svg.appendChild(line);
+          hexBlueYLines.push({
+            element: line,
+            start: center,
+            end: hexPoints[i]
+          });
+        } else {
+          line.setAttribute('stroke', '#0BC5BA'); // Teal color for A lines
+          svg.appendChild(line);
+          hexBlueALines.push({
+            element: line,
+            start: center,
+            end: hexPoints[i]
+          });
+        }
+        
+        line.setAttribute('stroke-width', '1.5');
+        line.setAttribute('stroke-opacity', '1');
+      }
+      
+      // Create red lines between the blue ones
+      for (let i = 0; i < corners; i++) {
+        // For each blue line, create two red lines at angles ±30° from it
+        const baseAngle = (Math.PI / 3) * i - Math.PI / 6;
+        
+        // Create the two red lines at ±30° from the blue line
+        const angles = [
+          baseAngle + Math.PI/6, // +30°
+          baseAngle - Math.PI/6  // -30°
+        ];
+        
+        for (const angle of angles) {
+          // Calculate the endpoint of the red line
+          const endX = centerX + hexRadius * Math.cos(angle);
+          const endY = centerY + hexRadius * Math.sin(angle);
+          const endpoint = { x: endX, y: endY };
+          
+          // Create the red line
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', center.x);
+          line.setAttribute('y1', center.y);
+          line.setAttribute('x2', endX);
+          line.setAttribute('y2', endY);
+          line.setAttribute('stroke', '#0BC5BA'); // Teal color for "red" lines
+          line.setAttribute('stroke-width', '1');
+          line.setAttribute('stroke-opacity', '1');
+          svg.appendChild(line);
+          hexRedLines.push({
+            element: line,
+            start: center,
+            end: endpoint
+          });
+        }
+      }
+      
+      // Create hexagon outer lines (black)
+      for (let i = 0; i < corners; i++) {
+        const startPoint = hexPoints[i];
+        const endPoint = hexPoints[(i + 1) % corners];
+        
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', startPoint.x);
+        line.setAttribute('y1', startPoint.y);
+        line.setAttribute('x2', endPoint.x);
+        line.setAttribute('y2', endPoint.y);
+        line.setAttribute('stroke', '#0BC5BA'); // Teal color for "black" lines
+        line.setAttribute('stroke-width', '1.5');
+        line.setAttribute('stroke-opacity', '1');
+        svg.appendChild(line);
+        hexBlackLines.push({
+          element: line,
+          start: startPoint,
+          end: endPoint
+        });
+      }
+      
+      return { 
+        blueYLines: hexBlueYLines,
+        blueALines: hexBlueALines,
+        blackLines: hexBlackLines, 
+        redLines: hexRedLines 
+      };
+    }
+    
+    // Initialize the visualization with grid of hexagons
+    function initVisualization() {
+      // Calculate number of hexagons needed to fill viewport
+      // Add extra to ensure we cover the edges
+      const horizontalSpacing = 1.5 * hexRadius;
+      const verticalSpacing = hexHeight * 0.75;
+      
+      // Increase the number of columns to ensure complete hexagons at the edges
+      const numCols = Math.ceil(viewportWidth / (horizontalSpacing * 2)) + 4; // Added more columns
+      const numRows = Math.ceil(viewportHeight / verticalSpacing) + 4; // Added more rows too
+      
+      // Calculate starting positions to center the grid
+      const startX = viewBox.x + (viewportWidth % (horizontalSpacing * 2)) / 2;
+      const startY = viewBox.y + (viewportHeight % verticalSpacing) / 2;
+      
+      // Create hexagon grid
+      for (let row = -numRows / 2; row < numRows / 2; row++) {
+        const rowOffset = (row % 2 === 0) ? 0 : hexWidth / 2;
+        
+        for (let col = -numCols / 2; col < numCols / 2; col++) {
+          const centerX = col * hexWidth + rowOffset;
+          const centerY = row * verticalSpacing;
+          
+          const { blueYLines: hexBlueYLines, blueALines: hexBlueALines, blackLines: hexBlackLines, redLines: hexRedLines } = createHexagon(centerX, centerY);
+          blueYLines.push(...hexBlueYLines);
+          blueALines.push(...hexBlueALines);
+          blackLines.push(...hexBlackLines);
+          redLines.push(...hexRedLines);
+        }
+      }
+      
+      // Update gap sizes initially
+      updateBlueYGapSize(0);
+      updateBlueAGapSize(0);
+      updateBlackGapSize(0);
+      updateRedGapSize(0);
+    }
+    
+    // Update functions for blue Y lines
+    function updateBlueYGapSize(gapSize) {
+      blueYLines.forEach(line => {
+        const startPoint = pointAtDistance(line.start, line.end, gapSize);
+        const endPoint = pointAtDistance(line.end, line.start, gapSize);
+        
+        line.element.setAttribute('x1', startPoint.x);
+        line.element.setAttribute('y1', startPoint.y);
+        line.element.setAttribute('x2', endPoint.x);
+        line.element.setAttribute('y2', endPoint.y);
+      });
+    }
+    
+    function updateBlueYOpacity(opacity) {
+      blueYLines.forEach(line => {
+        line.element.setAttribute('stroke-opacity', opacity);
+      });
+    }
+    
+    function updateBlueYThickness(thickness) {
+      blueYLines.forEach(line => {
+        line.element.setAttribute('stroke-width', thickness);
+      });
+    }
+    
+    function updateBlueYColor(color) {
+      blueYLines.forEach(line => {
+        line.element.setAttribute('stroke', color);
+      });
+    }
+    
+    // Update functions for blue A lines
+    function updateBlueAGapSize(gapSize) {
+      blueALines.forEach(line => {
+        const startPoint = pointAtDistance(line.start, line.end, gapSize);
+        const endPoint = pointAtDistance(line.end, line.start, gapSize);
+        
+        line.element.setAttribute('x1', startPoint.x);
+        line.element.setAttribute('y1', startPoint.y);
+        line.element.setAttribute('x2', endPoint.x);
+        line.element.setAttribute('y2', endPoint.y);
+      });
+    }
+    
+    function updateBlueAOpacity(opacity) {
+      blueALines.forEach(line => {
+        line.element.setAttribute('stroke-opacity', opacity);
+      });
+    }
+    
+    function updateBlueAThickness(thickness) {
+      blueALines.forEach(line => {
+        line.element.setAttribute('stroke-width', thickness);
+      });
+    }
+    
+    function updateBlueAColor(color) {
+      blueALines.forEach(line => {
+        line.element.setAttribute('stroke', color);
+      });
+    }
+    
+    // Update functions for black lines
+    function updateBlackGapSize(gapSize) {
+      blackLines.forEach(line => {
+        const startPoint = pointAtDistance(line.start, line.end, gapSize);
+        const endPoint = pointAtDistance(line.end, line.start, gapSize);
+        
+        line.element.setAttribute('x1', startPoint.x);
+        line.element.setAttribute('y1', startPoint.y);
+        line.element.setAttribute('x2', endPoint.x);
+        line.element.setAttribute('y2', endPoint.y);
+      });
+    }
+    
+    function updateBlackOpacity(opacity) {
+      blackLines.forEach(line => {
+        line.element.setAttribute('stroke-opacity', opacity);
+      });
+    }
+    
+    function updateBlackThickness(thickness) {
+      blackLines.forEach(line => {
+        line.element.setAttribute('stroke-width', thickness);
+      });
+    }
+    
+    function updateBlackColor(color) {
+      blackLines.forEach(line => {
+        line.element.setAttribute('stroke', color);
+      });
+    }
+    
+    // Update functions for red lines
+    function updateRedGapSize(gapSize) {
+      redLines.forEach(line => {
+        const startPoint = pointAtDistance(line.start, line.end, gapSize);
+        const endPoint = pointAtDistance(line.end, line.start, gapSize);
+        
+        line.element.setAttribute('x1', startPoint.x);
+        line.element.setAttribute('y1', startPoint.y);
+        line.element.setAttribute('x2', endPoint.x);
+        line.element.setAttribute('y2', endPoint.y);
+      });
+    }
+    
+    function updateRedOpacity(opacity) {
+      redLines.forEach(line => {
+        line.element.setAttribute('stroke-opacity', opacity);
+      });
+    }
+    
+    function updateRedThickness(thickness) {
+      redLines.forEach(line => {
+        line.element.setAttribute('stroke-width', thickness);
+      });
+    }
+    
+    function updateRedColor(color) {
+      redLines.forEach(line => {
+        line.element.setAttribute('stroke', color);
+      });
+    }
+    
+    // Initialize with the hexagon grid
+    initVisualization();
+    
+    // Function to update background color
+    function updateBackgroundColor(color) {
+      document.getElementById('hexagonSvg').style.backgroundColor = color;
+    }
+    
+    // Function to update all line colors
+    function updateGlobalColor(color) {
+      updateBlueYColor(color);
+      updateBlueAColor(color);
+      updateBlackColor(color);
+      updateRedColor(color);
+    }
+    
+    // Array of allowed line colors
+    const lineColors = ["#0BC5BA", "#FF6640", "#DA9DFF", "#359DFF", "#9BA6AA"];
+    
+    // Function to get a random line color from allowed colors
+    function getRandomLineColor() {
+      return lineColors[Math.floor(Math.random() * lineColors.length)];
+    }
+    
+    // Array of allowed background colors
+    const bgColors = ["#FFFFFF", "#000000"];
+    
+    // Function to get a random background color
+    function getRandomBackgroundColor() {
+      return bgColors[Math.floor(Math.random() * bgColors.length)];
+    }
+    
+    // Function to get a random value in a range
+    function getRandomValue(min, max, step) {
+      const steps = Math.floor((max - min) / step) + 1;
+      return min + (Math.floor(Math.random() * steps) * step);
+    }
+    
+    // Function to randomize all settings
+    function randomizeSettings() {
+      // Randomize background color - REMOVED PER REQUEST
+      /* 
+      const bgColor = getRandomBackgroundColor();
+      document.getElementById('backgroundColor').value = bgColor;
+      document.getElementById('backgroundColorPreview').style.backgroundColor = bgColor;
+      updateBackgroundColor(bgColor);
+      */
+      
+      // Randomize global line color
+      const globalColor = getRandomLineColor();
+      document.getElementById('globalColor').value = globalColor;
+      document.getElementById('globalColorPreview').style.backgroundColor = globalColor;
+      updateGlobalColor(globalColor);
+      
+      // Check if equal thickness is enabled
+      const equalThicknessEnabled = document.getElementById('equalThickness').checked;
+      
+      // Only randomize individual line thicknesses if equal thickness is not enabled
+      if (!equalThicknessEnabled) {
+        // Randomize individual line thicknesses
+        // Randomize Central Lines A settings (thickness only)
+        const blueYThickness = getRandomValue(0.5, 15, 0.5);
+        document.getElementById('blueYThickness').value = blueYThickness;
+        document.getElementById('blueYThicknessValue').textContent = blueYThickness.toFixed(1);
+        updateBlueYThickness(blueYThickness);
+        
+        // Randomize Central Lines Y settings (thickness only)
+        const blueAThickness = getRandomValue(0.5, 15, 0.5);
+        document.getElementById('blueAThickness').value = blueAThickness;
+        document.getElementById('blueAThicknessValue').textContent = blueAThickness.toFixed(1);
+        updateBlueAThickness(blueAThickness);
+        
+        // Randomize Edge Lines settings (thickness only)
+        const blackThickness = getRandomValue(0.5, 15, 0.5);
+        document.getElementById('blackThickness').value = blackThickness;
+        document.getElementById('blackThicknessValue').textContent = blackThickness.toFixed(1);
+        updateBlackThickness(blackThickness);
+        
+        // Randomize Extra Lines settings (thickness only)
+        const redThickness = getRandomValue(0.5, 15, 0.5);
+        document.getElementById('redThickness').value = redThickness;
+        document.getElementById('redThicknessValue').textContent = redThickness.toFixed(1);
+        updateRedThickness(redThickness);
+      }
+      // Note: We don't randomize the global thickness when equal thickness is enabled
+      
+      // Randomize other settings for all line types (gaps and visibility)
+      
+      // Central Lines A
+      const blueYGap = getRandomValue(0, 30, 1);
+      document.getElementById('blueYGapSize').value = blueYGap;
+      document.getElementById('blueYGapSizeValue').textContent = blueYGap;
+      updateBlueYGapSize(blueYGap);
+      
+      const blueYVisible = Math.random() > 0.5;
+      document.getElementById('blueYOpacity').checked = blueYVisible;
+      updateBlueYOpacity(blueYVisible ? 1 : 0);
+      
+      // Central Lines Y
+      const blueAGap = getRandomValue(0, 30, 1);
+      document.getElementById('blueAGapSize').value = blueAGap;
+      document.getElementById('blueAGapSizeValue').textContent = blueAGap;
+      updateBlueAGapSize(blueAGap);
+      
+      const blueAVisible = Math.random() > 0.5;
+      document.getElementById('blueAOpacity').checked = blueAVisible;
+      updateBlueAOpacity(blueAVisible ? 1 : 0);
+      
+      // Edge Lines
+      const blackGap = getRandomValue(0, 30, 1);
+      document.getElementById('blackGapSize').value = blackGap;
+      document.getElementById('blackGapSizeValue').textContent = blackGap;
+      updateBlackGapSize(blackGap);
+      
+      const blackVisible = Math.random() > 0.5;
+      document.getElementById('blackOpacity').checked = blackVisible;
+      updateBlackOpacity(blackVisible ? 1 : 0);
+      
+      // Extra Lines
+      const redGap = getRandomValue(0, 30, 1);
+      document.getElementById('redGapSize').value = redGap;
+      document.getElementById('redGapSizeValue').textContent = redGap;
+      updateRedGapSize(redGap);
+      
+      const redVisible = Math.random() > 0.5;
+      document.getElementById('redOpacity').checked = redVisible;
+      updateRedOpacity(redVisible ? 1 : 0);
+    }
+    
+    // Set up event listener for background color
+    const backgroundColorSelect = document.getElementById('backgroundColor');
+    const backgroundColorPreview = document.getElementById('backgroundColorPreview');
+    
+    backgroundColorSelect.addEventListener('change', function() {
+      const color = this.value;
+      backgroundColorPreview.style.backgroundColor = color;
+      updateBackgroundColor(color);
+    });
+    
+    // Set up event listener for global line color
+    const globalColorSelect = document.getElementById('globalColor');
+    const globalColorPreview = document.getElementById('globalColorPreview');
+    
+    globalColorSelect.addEventListener('change', function() {
+      const color = this.value;
+      globalColorPreview.style.backgroundColor = color;
+      updateGlobalColor(color);
+    });
+    
+    // Set up event listener for equal thickness checkbox
+    const equalThicknessCheckbox = document.getElementById('equalThickness');
+    const globalThicknessContainer = document.getElementById('globalThicknessContainer');
+    const globalThicknessSlider = document.getElementById('globalThickness');
+    const globalThicknessValue = document.getElementById('globalThicknessValue');
+    
+    // Function to update global thickness
+    function updateGlobalThickness(thickness) {
+      updateBlueYThickness(thickness);
+      updateBlueAThickness(thickness);
+      updateBlackThickness(thickness);
+      updateRedThickness(thickness);
+    }
+    
+    // Function to toggle individual thickness controls
+    function toggleThicknessControls() {
+      const individualControls = document.querySelectorAll('.line-control-group .slider-container label[for$="Thickness"]').forEach(label => {
+        if (label.htmlFor !== 'globalThickness' && label.htmlFor !== 'equalThickness') {
+          const container = label.closest('.slider-container');
+          container.style.display = equalThicknessCheckbox.checked ? 'none' : 'flex';
+        }
+      });
+      
+      // Show or hide global thickness control
+      globalThicknessContainer.style.display = equalThicknessCheckbox.checked ? 'flex' : 'none';
+      
+      // If enabled, sync all thickness sliders to the global value
+      if (equalThicknessCheckbox.checked) {
+        const thickness = parseFloat(globalThicknessSlider.value);
+        updateGlobalThickness(thickness);
+      }
+    }
+    
+    equalThicknessCheckbox.addEventListener('change', toggleThicknessControls);
+    
+    globalThicknessSlider.addEventListener('input', function() {
+      const value = parseFloat(this.value);
+      globalThicknessValue.textContent = value.toFixed(1);
+      updateGlobalThickness(value);
+    });
+    
+    // Set up event listener for randomize button
+    document.getElementById('randomizeButton').addEventListener('click', randomizeSettings);
+    
+    // Set up event listeners for blue Y lines
+    const blueYGapSlider = document.getElementById('blueYGapSize');
+    const blueYGapValue = document.getElementById('blueYGapSizeValue');
+    const blueYOpacityCheckbox = document.getElementById('blueYOpacity');
+    const blueYThicknessSlider = document.getElementById('blueYThickness');
+    const blueYThicknessValue = document.getElementById('blueYThicknessValue');
+    
+    blueYGapSlider.addEventListener('input', function() {
+      const value = parseInt(this.value);
+      blueYGapValue.textContent = value;
+      updateBlueYGapSize(value);
+    });
+    
+    blueYOpacityCheckbox.addEventListener('change', function() {
+      const value = this.checked ? 1 : 0;
+      updateBlueYOpacity(value);
+    });
+    
+    blueYThicknessSlider.addEventListener('input', function() {
+      const value = parseFloat(this.value);
+      blueYThicknessValue.textContent = value.toFixed(1);
+      updateBlueYThickness(value);
+    });
+    
+    // Set up event listeners for blue A lines
+    const blueAGapSlider = document.getElementById('blueAGapSize');
+    const blueAGapValue = document.getElementById('blueAGapSizeValue');
+    const blueAOpacityCheckbox = document.getElementById('blueAOpacity');
+    const blueAThicknessSlider = document.getElementById('blueAThickness');
+    const blueAThicknessValue = document.getElementById('blueAThicknessValue');
+    
+    blueAGapSlider.addEventListener('input', function() {
+      const value = parseInt(this.value);
+      blueAGapValue.textContent = value;
+      updateBlueAGapSize(value);
+    });
+    
+    blueAOpacityCheckbox.addEventListener('change', function() {
+      const value = this.checked ? 1 : 0;
+      updateBlueAOpacity(value);
+    });
+    
+    blueAThicknessSlider.addEventListener('input', function() {
+      const value = parseFloat(this.value);
+      blueAThicknessValue.textContent = value.toFixed(1);
+      updateBlueAThickness(value);
+    });
+    
+    // Set up event listeners for black lines
+    const blackGapSlider = document.getElementById('blackGapSize');
+    const blackGapValue = document.getElementById('blackGapSizeValue');
+    const blackOpacityCheckbox = document.getElementById('blackOpacity');
+    const blackThicknessSlider = document.getElementById('blackThickness');
+    const blackThicknessValue = document.getElementById('blackThicknessValue');
+    
+    blackGapSlider.addEventListener('input', function() {
+      const value = parseInt(this.value);
+      blackGapValue.textContent = value;
+      updateBlackGapSize(value);
+    });
+    
+    blackOpacityCheckbox.addEventListener('change', function() {
+      const value = this.checked ? 1 : 0;
+      updateBlackOpacity(value);
+    });
+    
+    blackThicknessSlider.addEventListener('input', function() {
+      const value = parseFloat(this.value);
+      blackThicknessValue.textContent = value.toFixed(1);
+      updateBlackThickness(value);
+    });
+    
+    // Set up event listeners for red lines
+    const redGapSlider = document.getElementById('redGapSize');
+    const redGapValue = document.getElementById('redGapSizeValue');
+    const redOpacityCheckbox = document.getElementById('redOpacity');
+    const redThicknessSlider = document.getElementById('redThickness');
+    const redThicknessValue = document.getElementById('redThicknessValue');
+    
+    redGapSlider.addEventListener('input', function() {
+      const value = parseInt(this.value);
+      redGapValue.textContent = value;
+      updateRedGapSize(value);
+    });
+    
+    redOpacityCheckbox.addEventListener('change', function() {
+      const value = this.checked ? 1 : 0;
+      updateRedOpacity(value);
+    });
+    
+    redThicknessSlider.addEventListener('input', function() {
+      const value = parseFloat(this.value);
+      redThicknessValue.textContent = value.toFixed(1);
+      updateRedThickness(value);
+    });
+  </script>
+</body>
+</html>
