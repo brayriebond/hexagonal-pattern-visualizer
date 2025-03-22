@@ -3,40 +3,40 @@
 <head>
   <style>
     .randomize-button {
-      background-color: #0BC5BA;
+      background-color: #333;
       color: white;
       border: none;
       border-radius: 4px;
-      padding: 10px 15px;
-      font-size: 16px;
+      padding: 8px 12px;
+      font-size: 14px;
       cursor: pointer;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       transition: background-color 0.3s;
     }
     
     .randomize-button:hover {
-      background-color: #09a79e;
+      background-color: #555;
     }
     
     .background-control {
       width: 100%;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 10px;
+      border-radius: 6px;
+      padding: 8px;
     }
     
     .color-select {
-      padding: 5px;
+      padding: 4px;
       border-radius: 4px;
       border: 1px solid #ddd;
       width: 100%;
-      height: 30px;
+      height: 28px;
     }
     
     .background-control-header {
       font-weight: bold;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -44,7 +44,7 @@
     
     .line-control-header {
       font-weight: bold;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -55,13 +55,14 @@
       cursor: pointer;
       width: 16px;
       height: 16px;
+      accent-color: #000;
     }
     
     .checkbox-container {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     
     .checkbox-container label {
@@ -72,6 +73,7 @@
       cursor: pointer;
       width: 16px;
       height: 16px;
+      accent-color: #000;
     }
     
     .color-preview {
@@ -86,16 +88,17 @@
     body {
       font-family: Arial, sans-serif;
       margin: 0;
-      padding: 20px;
+      padding: 16px;
       display: flex;
       flex-direction: row;
       height: 100vh;
       box-sizing: border-box;
+      color: #333;
     }
     
     .control-panel {
-      width: 350px;
-      padding-right: 20px;
+      width: 320px;
+      padding-right: 16px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -110,8 +113,9 @@
     
     h2 {
       margin-top: 0;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       text-align: center;
+      font-size: 18px;
     }
     
     .controls {
@@ -120,32 +124,36 @@
     
     .line-control-group {
       width: 100%;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 10px;
+      border-radius: 6px;
+      padding: 8px;
     }
     
     .slider-container {
       width: 100%;
       display: flex;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     
     .slider-container label {
-      margin-right: 10px;
-      width: 70px;
+      margin-right: 8px;
+      width: 65px;
+      font-size: 14px;
     }
     
     input[type="range"] {
       flex-grow: 1;
+      height: 6px;
+      accent-color: #000;
     }
     
     .value-display {
-      margin-left: 10px;
-      width: 40px;
+      margin-left: 8px;
+      width: 35px;
       text-align: right;
+      font-size: 14px;
     }
     
     svg {
@@ -156,6 +164,23 @@
       max-height: 90vh;
       width: 800px;
       height: 600px;
+    }
+    
+    /* Override default input styling for cleaner look */
+    input[type="number"] {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 4px;
+      font-size: 14px;
+    }
+    
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 10px;
+      padding-right: 20px;
     }
   </style>
 </head>
@@ -182,7 +207,7 @@
         <span class="value-display">hexagons</span>
       </div>
       
-      <button class="randomize-button" id="exportButton" style="background-color: #359DFF; width: 100%;">Export as SVG</button>
+      <button class="randomize-button" id="exportButton" style="background-color: #333; width: 100%;">Export as SVG</button>
     </div>
     
     <div class="background-control">
@@ -250,9 +275,9 @@
         <!-- Color control removed - using global color -->
         
         <div class="slider-container">
-          <label for="blueYGapSize">Gap:</label>
-          <input type="range" id="blueYGapSize" min="0" max="50" value="0" step="1">
-          <span id="blueYGapSizeValue" class="value-display">0%</span>
+          <label for="blueYGapSize">Length:</label>
+          <input type="range" id="blueYGapSize" min="0" max="100" value="100" step="1">
+          <span id="blueYGapSizeValue" class="value-display">100%</span>
         </div>
         
         <div class="slider-container" style="display: none;">
@@ -272,9 +297,9 @@
         <!-- Color control removed - using global color -->
         
         <div class="slider-container">
-          <label for="blueAGapSize">Gap:</label>
-          <input type="range" id="blueAGapSize" min="0" max="50" value="0" step="1">
-          <span id="blueAGapSizeValue" class="value-display">0%</span>
+          <label for="blueAGapSize">Length:</label>
+          <input type="range" id="blueAGapSize" min="0" max="100" value="100" step="1">
+          <span id="blueAGapSizeValue" class="value-display">100%</span>
         </div>
         
         <div class="slider-container" style="display: none;">
@@ -294,9 +319,9 @@
         <!-- Color control removed - using global color -->
         
         <div class="slider-container">
-          <label for="blackGapSize">Gap:</label>
-          <input type="range" id="blackGapSize" min="0" max="50" value="0" step="1">
-          <span id="blackGapSizeValue" class="value-display">0%</span>
+          <label for="blackGapSize">Length:</label>
+          <input type="range" id="blackGapSize" min="0" max="100" value="100" step="1">
+          <span id="blackGapSizeValue" class="value-display">100%</span>
         </div>
         
         <div class="slider-container" style="display: none;">
@@ -316,9 +341,9 @@
         <!-- Color control removed - using global color -->
         
         <div class="slider-container">
-          <label for="redGapSize">Gap:</label>
-          <input type="range" id="redGapSize" min="0" max="50" value="0" step="1">
-          <span id="redGapSizeValue" class="value-display">0%</span>
+          <label for="redGapSize">Length:</label>
+          <input type="range" id="redGapSize" min="0" max="100" value="100" step="1">
+          <span id="redGapSizeValue" class="value-display">100%</span>
         </div>
         
         <div class="slider-container" style="display: none;">
@@ -549,19 +574,19 @@
     // Function to update all current settings on the lines
     function updateAllSettings() {
       // Get current values from UI controls
-      const blueYGap = parseInt(document.getElementById('blueYGapSize').value);
+      const blueYLength = parseInt(document.getElementById('blueYGapSize').value);
       const blueYVisible = document.getElementById('blueYOpacity').checked;
       const blueYThickness = parseFloat(document.getElementById('blueYThickness').value);
       
-      const blueAGap = parseInt(document.getElementById('blueAGapSize').value);
+      const blueALength = parseInt(document.getElementById('blueAGapSize').value);
       const blueAVisible = document.getElementById('blueAOpacity').checked;
       const blueAThickness = parseFloat(document.getElementById('blueAThickness').value);
       
-      const blackGap = parseInt(document.getElementById('blackGapSize').value);
+      const blackLength = parseInt(document.getElementById('blackGapSize').value);
       const blackVisible = document.getElementById('blackOpacity').checked;
       const blackThickness = parseFloat(document.getElementById('blackThickness').value);
       
-      const redGap = parseInt(document.getElementById('redGapSize').value);
+      const redLength = parseInt(document.getElementById('redGapSize').value);
       const redVisible = document.getElementById('redOpacity').checked;
       const redThickness = parseFloat(document.getElementById('redThickness').value);
       
@@ -570,16 +595,16 @@
       const globalThickness = parseFloat(document.getElementById('globalThickness').value);
       
       // Apply all settings
-      updateBlueYGapSize(blueYGap);
+      updateBlueYGapSize(blueYLength);
       updateBlueYOpacity(blueYVisible ? 1 : 0);
       
-      updateBlueAGapSize(blueAGap);
+      updateBlueAGapSize(blueALength);
       updateBlueAOpacity(blueAVisible ? 1 : 0);
       
-      updateBlackGapSize(blackGap);
+      updateBlackGapSize(blackLength);
       updateBlackOpacity(blackVisible ? 1 : 0);
       
-      updateRedGapSize(redGap);
+      updateRedGapSize(redLength);
       updateRedOpacity(redVisible ? 1 : 0);
       
       // Apply thickness based on equal thickness setting
@@ -598,19 +623,31 @@
     }
     
     // Update functions for blue Y lines
-    function updateBlueYGapSize(gapPercentage) {
+    function updateBlueYGapSize(lengthPercentage) {
       blueYLines.forEach(line => {
-        // Calculate actual gap size as a percentage of the line length
-        const lineLength = distance(line.start, line.end);
-        const gapSize = (lineLength * gapPercentage) / 100;
+        // Calculate actual line length as a percentage of the total length
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (lengthPercentage / 100);
+        const gapSize = (totalLength - visibleLength) / 2; // Divide by 2 to apply from both sides equally
         
-        const startPoint = pointAtDistance(line.start, line.end, gapSize);
-        const endPoint = pointAtDistance(line.end, line.start, gapSize);
-        
-        line.element.setAttribute('x1', startPoint.x);
-        line.element.setAttribute('y1', startPoint.y);
-        line.element.setAttribute('x2', endPoint.x);
-        line.element.setAttribute('y2', endPoint.y);
+        // Only calculate new points if we have some visible length
+        if (lengthPercentage > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          // For 0% case, just set both points to the center to make line invisible
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
       });
     }
     
@@ -633,19 +670,31 @@
     }
     
     // Update functions for blue A lines
-    function updateBlueAGapSize(gapPercentage) {
+    function updateBlueAGapSize(lengthPercentage) {
       blueALines.forEach(line => {
-        // Calculate actual gap size as a percentage of the line length
-        const lineLength = distance(line.start, line.end);
-        const gapSize = (lineLength * gapPercentage) / 100;
+        // Calculate actual line length as a percentage of the total length
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (lengthPercentage / 100);
+        const gapSize = (totalLength - visibleLength) / 2; // Divide by 2 to apply from both sides equally
         
-        const startPoint = pointAtDistance(line.start, line.end, gapSize);
-        const endPoint = pointAtDistance(line.end, line.start, gapSize);
-        
-        line.element.setAttribute('x1', startPoint.x);
-        line.element.setAttribute('y1', startPoint.y);
-        line.element.setAttribute('x2', endPoint.x);
-        line.element.setAttribute('y2', endPoint.y);
+        // Only calculate new points if we have some visible length
+        if (lengthPercentage > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          // For 0% case, just set both points to the center to make line invisible
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
       });
     }
     
@@ -668,19 +717,31 @@
     }
     
     // Update functions for black lines
-    function updateBlackGapSize(gapPercentage) {
+    function updateBlackGapSize(lengthPercentage) {
       blackLines.forEach(line => {
-        // Calculate actual gap size as a percentage of the line length
-        const lineLength = distance(line.start, line.end);
-        const gapSize = (lineLength * gapPercentage) / 100;
+        // Calculate actual line length as a percentage of the total length
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (lengthPercentage / 100);
+        const gapSize = (totalLength - visibleLength) / 2; // Divide by 2 to apply from both sides equally
         
-        const startPoint = pointAtDistance(line.start, line.end, gapSize);
-        const endPoint = pointAtDistance(line.end, line.start, gapSize);
-        
-        line.element.setAttribute('x1', startPoint.x);
-        line.element.setAttribute('y1', startPoint.y);
-        line.element.setAttribute('x2', endPoint.x);
-        line.element.setAttribute('y2', endPoint.y);
+        // Only calculate new points if we have some visible length
+        if (lengthPercentage > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          // For 0% case, just set both points to the center to make line invisible
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
       });
     }
     
@@ -703,19 +764,31 @@
     }
     
     // Update functions for red lines
-    function updateRedGapSize(gapPercentage) {
+    function updateRedGapSize(lengthPercentage) {
       redLines.forEach(line => {
-        // Calculate actual gap size as a percentage of the line length
-        const lineLength = distance(line.start, line.end);
-        const gapSize = (lineLength * gapPercentage) / 100;
+        // Calculate actual line length as a percentage of the total length
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (lengthPercentage / 100);
+        const gapSize = (totalLength - visibleLength) / 2; // Divide by 2 to apply from both sides equally
         
-        const startPoint = pointAtDistance(line.start, line.end, gapSize);
-        const endPoint = pointAtDistance(line.end, line.start, gapSize);
-        
-        line.element.setAttribute('x1', startPoint.x);
-        line.element.setAttribute('y1', startPoint.y);
-        line.element.setAttribute('x2', endPoint.x);
-        line.element.setAttribute('y2', endPoint.y);
+        // Only calculate new points if we have some visible length
+        if (lengthPercentage > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          // For 0% case, just set both points to the center to make line invisible
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
       });
     }
     
@@ -951,16 +1024,16 @@
         exportSvg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
         
         // Get current settings from the UI
-        const blueYGap = parseInt(document.getElementById('blueYGapSize').value);
+        const blueYLength = parseInt(document.getElementById('blueYGapSize').value);
         const blueYVisible = document.getElementById('blueYOpacity').checked;
         
-        const blueAGap = parseInt(document.getElementById('blueAGapSize').value);
+        const blueALength = parseInt(document.getElementById('blueAGapSize').value);
         const blueAVisible = document.getElementById('blueAOpacity').checked;
         
-        const blackGap = parseInt(document.getElementById('blackGapSize').value);
+        const blackLength = parseInt(document.getElementById('blackGapSize').value);
         const blackVisible = document.getElementById('blackOpacity').checked;
         
-        const redGap = parseInt(document.getElementById('redGapSize').value);
+        const redLength = parseInt(document.getElementById('redGapSize').value);
         const redVisible = document.getElementById('redOpacity').checked;
         
         const globalColor = document.getElementById('globalColor').value;
@@ -1014,38 +1087,46 @@
               if (i === 1 || i === 3 || i === 5) { // Y group
                 if (blueYVisible) {
                   const lineLength = distance(center, hexPoints[i]);
-                  const gapSize = (lineLength * blueYGap) / 100;
+                  const visibleLength = lineLength * (blueYLength / 100);
+                  const gapSize = (lineLength - visibleLength) / 2;
                   
-                  const startPoint = pointAtDistance(center, hexPoints[i], gapSize);
-                  const endPoint = pointAtDistance(hexPoints[i], center, gapSize);
-                  
-                  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                  line.setAttribute('x1', startPoint.x);
-                  line.setAttribute('y1', startPoint.y);
-                  line.setAttribute('x2', endPoint.x);
-                  line.setAttribute('y2', endPoint.y);
-                  line.setAttribute('stroke', globalColor);
-                  line.setAttribute('stroke-width', blueYThickness);
-                  line.setAttribute('stroke-opacity', '1');
-                  exportSvg.appendChild(line);
+                  // Only render if there's a visible length
+                  if (blueYLength > 0) {
+                    const startPoint = pointAtDistance(center, hexPoints[i], gapSize);
+                    const endPoint = pointAtDistance(hexPoints[i], center, gapSize);
+                    
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', startPoint.x);
+                    line.setAttribute('y1', startPoint.y);
+                    line.setAttribute('x2', endPoint.x);
+                    line.setAttribute('y2', endPoint.y);
+                    line.setAttribute('stroke', globalColor);
+                    line.setAttribute('stroke-width', blueYThickness);
+                    line.setAttribute('stroke-opacity', '1');
+                    exportSvg.appendChild(line);
+                  }
                 }
               } else { // A group
                 if (blueAVisible) {
                   const lineLength = distance(center, hexPoints[i]);
-                  const gapSize = (lineLength * blueAGap) / 100;
+                  const visibleLength = lineLength * (blueALength / 100);
+                  const gapSize = (lineLength - visibleLength) / 2;
                   
-                  const startPoint = pointAtDistance(center, hexPoints[i], gapSize);
-                  const endPoint = pointAtDistance(hexPoints[i], center, gapSize);
-                  
-                  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                  line.setAttribute('x1', startPoint.x);
-                  line.setAttribute('y1', startPoint.y);
-                  line.setAttribute('x2', endPoint.x);
-                  line.setAttribute('y2', endPoint.y);
-                  line.setAttribute('stroke', globalColor);
-                  line.setAttribute('stroke-width', blueAThickness);
-                  line.setAttribute('stroke-opacity', '1');
-                  exportSvg.appendChild(line);
+                  // Only render if there's a visible length
+                  if (blueALength > 0) {
+                    const startPoint = pointAtDistance(center, hexPoints[i], gapSize);
+                    const endPoint = pointAtDistance(hexPoints[i], center, gapSize);
+                    
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', startPoint.x);
+                    line.setAttribute('y1', startPoint.y);
+                    line.setAttribute('x2', endPoint.x);
+                    line.setAttribute('y2', endPoint.y);
+                    line.setAttribute('stroke', globalColor);
+                    line.setAttribute('stroke-width', blueAThickness);
+                    line.setAttribute('stroke-opacity', '1');
+                    exportSvg.appendChild(line);
+                  }
                 }
               }
             }
@@ -1066,20 +1147,24 @@
                   const endpoint = { x: endX, y: endY };
                   
                   const lineLength = distance(center, endpoint);
-                  const gapSize = (lineLength * redGap) / 100;
+                  const visibleLength = lineLength * (redLength / 100);
+                  const gapSize = (lineLength - visibleLength) / 2;
                   
-                  const startPoint = pointAtDistance(center, endpoint, gapSize);
-                  const endPoint = pointAtDistance(endpoint, center, gapSize);
-                  
-                  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                  line.setAttribute('x1', startPoint.x);
-                  line.setAttribute('y1', startPoint.y);
-                  line.setAttribute('x2', endPoint.x);
-                  line.setAttribute('y2', endPoint.y);
-                  line.setAttribute('stroke', globalColor);
-                  line.setAttribute('stroke-width', redThickness);
-                  line.setAttribute('stroke-opacity', '1');
-                  exportSvg.appendChild(line);
+                  // Only render if there's a visible length
+                  if (redLength > 0) {
+                    const startPoint = pointAtDistance(center, endpoint, gapSize);
+                    const endPoint = pointAtDistance(endpoint, center, gapSize);
+                    
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', startPoint.x);
+                    line.setAttribute('y1', startPoint.y);
+                    line.setAttribute('x2', endPoint.x);
+                    line.setAttribute('y2', endPoint.y);
+                    line.setAttribute('stroke', globalColor);
+                    line.setAttribute('stroke-width', redThickness);
+                    line.setAttribute('stroke-opacity', '1');
+                    exportSvg.appendChild(line);
+                  }
                 }
               }
             }
@@ -1091,20 +1176,24 @@
                 const endPoint = hexPoints[(i + 1) % corners];
                 
                 const lineLength = distance(startPoint, endPoint);
-                const gapSize = (lineLength * blackGap) / 100;
+                const visibleLength = lineLength * (blackLength / 100);
+                const gapSize = (lineLength - visibleLength) / 2;
                 
-                const adjustedStart = pointAtDistance(startPoint, endPoint, gapSize);
-                const adjustedEnd = pointAtDistance(endPoint, startPoint, gapSize);
-                
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', adjustedStart.x);
-                line.setAttribute('y1', adjustedStart.y);
-                line.setAttribute('x2', adjustedEnd.x);
-                line.setAttribute('y2', adjustedEnd.y);
-                line.setAttribute('stroke', globalColor);
-                line.setAttribute('stroke-width', blackThickness);
-                line.setAttribute('stroke-opacity', '1');
-                exportSvg.appendChild(line);
+                // Only render if there's a visible length
+                if (blackLength > 0) {
+                  const adjustedStart = pointAtDistance(startPoint, endPoint, gapSize);
+                  const adjustedEnd = pointAtDistance(endPoint, startPoint, gapSize);
+                  
+                  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                  line.setAttribute('x1', adjustedStart.x);
+                  line.setAttribute('y1', adjustedStart.y);
+                  line.setAttribute('x2', adjustedEnd.x);
+                  line.setAttribute('y2', adjustedEnd.y);
+                  line.setAttribute('stroke', globalColor);
+                  line.setAttribute('stroke-width', blackThickness);
+                  line.setAttribute('stroke-opacity', '1');
+                  exportSvg.appendChild(line);
+                }
               }
             }
           }
@@ -1221,36 +1310,36 @@
         }
       }
       
-      // Randomize gaps and visibility settings for all line types
+      // Randomize line lengths and visibility settings for all line types
       
       // Central Lines A
-      const blueYGap = getRandomValue(0, 50, 1);
-      document.getElementById('blueYGapSize').value = blueYGap;
-      document.getElementById('blueYGapSizeValue').textContent = blueYGap + '%';
+      const blueYLength = getRandomValue(0, 100, 1);
+      document.getElementById('blueYGapSize').value = blueYLength;
+      document.getElementById('blueYGapSizeValue').textContent = blueYLength + '%';
       
       const blueYVisible = Math.random() > 0.2;
       document.getElementById('blueYOpacity').checked = blueYVisible;
       
       // Central Lines Y
-      const blueAGap = getRandomValue(0, 50, 1);
-      document.getElementById('blueAGapSize').value = blueAGap;
-      document.getElementById('blueAGapSizeValue').textContent = blueAGap + '%';
+      const blueALength = getRandomValue(0, 100, 1);
+      document.getElementById('blueAGapSize').value = blueALength;
+      document.getElementById('blueAGapSizeValue').textContent = blueALength + '%';
       
       const blueAVisible = Math.random() > 0.2;
       document.getElementById('blueAOpacity').checked = blueAVisible;
       
       // Edge Lines
-      const blackGap = getRandomValue(0, 50, 1);
-      document.getElementById('blackGapSize').value = blackGap;
-      document.getElementById('blackGapSizeValue').textContent = blackGap + '%';
+      const blackLength = getRandomValue(0, 100, 1);
+      document.getElementById('blackGapSize').value = blackLength;
+      document.getElementById('blackGapSizeValue').textContent = blackLength + '%';
       
       const blackVisible = Math.random() > 0.2;
       document.getElementById('blackOpacity').checked = blackVisible;
       
       // Extra Lines
-      const redGap = getRandomValue(0, 50, 1);
-      document.getElementById('redGapSize').value = redGap;
-      document.getElementById('redGapSizeValue').textContent = redGap + '%';
+      const redLength = getRandomValue(0, 100, 1);
+      document.getElementById('redGapSize').value = redLength;
+      document.getElementById('redGapSizeValue').textContent = redLength + '%';
       
       const redVisible = Math.random() > 0.2;
       document.getElementById('redOpacity').checked = redVisible;
