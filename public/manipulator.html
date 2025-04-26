@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shape Manipulator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      box-sizing: border-box;
+      color: #333;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      min-width: 200px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 12px;
+    }
+    
+    .control-group h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .control-item {
+      margin-bottom: 12px;
+    }
+    
+    .control-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    input[type="range"] {
+      flex-grow: 1;
+      height: 6px;
+      accent-color: #000;
+    }
+    
+    .value-display {
+      width: 50px;
+      text-align: right;
+      font-size: 14px;
+    }
+    
+    .button {
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .button:hover {
+      background-color: #555;
+    }
+    
+    .back-button {
+      background-color: #555;
+    }
+    
+    .visualization-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    .visualization-frame {
+      position: relative;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+      overflow: hidden;
+      transition: width 0.3s, height 0.3s;
+    }
+    
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>Shape Manipulator</h2>
+    <button class="button back-button" id="backButton">Back to Pattern Maker Page</button>
+  </div>
+  
+  <div class="controls">
+    <div class="control-group">
+      <h3>Screen Ratio</h3>
+      <div class="control-item">
+        <label for="screenRatio">Select Ratio:</label>
+        <select id="screenRatio" class="screen-ratio-select">
+          <option value="1:1">1:1 (Square)</option>
+          <option value="3:4">3:4 (Portrait)</option>
+          <option value="4:3">4:3 (Landscape)</option>
+          <option value="2:3">2:3 (Portrait)</option>
+          <option value="3:2">3:2 (Landscape)</option>
+          <option value="9:16">9:16 (Portrait)</option>
+          <option value="16:9">16:9 (Landscape)</option>
+          <option value="1:3">1:3 (Tall Portrait)</option>
+          <option value="3:1">3:1 (Wide Landscape)</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="control-group">
+      <h3>Hexagon Size</h3>
+      <div class="control-item">
+        <div class="slider-container">
+          <label for="hexSize">Size:</label>
+          <input type="range" id="hexSize" min="20" max="100" value="60" step="5">
+          <span id="hexSizeValue" class="value-display">60</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="visualization-container">
+    <div class="visualization-frame" id="visualizationFrame">
+      <svg id="hexagonSvg" viewBox="0 0 800 600">
+        <!-- Hexagon grid will be drawn here -->
+      </svg>
+    </div>
+  </div>
+  
+  <script>
+    // Configuration
+    let hexRadius = 60; // Default radius, can be changed by the user
+    const corners = 6;
+    let aspectRatio = { width: 1, height: 1 }; // Default 1:1 ratio
+    
+    // Pattern storage
+    let patternSettings = {
+      blueYLength: 100,
+      blueYVisible: true,
+      blueALength: 100,
+      blueAVisible: true,
+      blackLength: 100,
+      blackVisible: true,
+      redLength: 100,
+      redVisible: true,
+      globalColor: '#0BC5BA',
+      backgroundColor: '#FFFFFF',
+      blueYThickness: 1.5,
+      blueAThickness: 1.5,
+      blackThickness: 1.5,
+      redThickness: 1.0
+    };
+    
+    // DOM Elements
+    const svg = document.getElementById('hexagonSvg');
+    const frame = document.getElementById('visualizationFrame');
+    const sizeSlider = document.getElementById('hexSize');
+    const sizeValue = document.getElementById('hexSizeValue');
+    const ratioSelect = document.getElementById('screenRatio');
+    const backButton = document.getElementById('backButton');
+    
+    // Line elements arrays
+    let blueYLines = [];
+    let blueALines = [];
+    let blackLines = [];
+    let redLines = [];
+    
+    // Get pattern settings from localStorage if available
+    function loadPatternSettings() {
+      const savedPattern = localStorage.getItem('hexagonPattern');
+      if (savedPattern) {
+        try {
+          patternSettings = JSON.parse(savedPattern);
+          return true;
+        } catch (e) {
+          console.error('Error parsing saved pattern:', e);
+          return false;
+        }
+      }
+      return false;
+    }
+    
+    // Calculate hexagon corners for a center point
+    function calculateHexagonPoints(centerX, centerY) {
+      const points = [];
+      for (let i = 0; i < corners; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 6;
+        const x = centerX + hexRadius * Math.cos(angle);
+        const y = centerY + hexRadius * Math.sin(angle);
+        points.push({ x, y });
+      }
+      return points;
+    }
+    
+    // Calculate distance between two points
+    function distance(p1, p2) {
+      return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+    }
+    
+    // Calculate point at a certain distance from start along a line to end
+    function pointAtDistance(start, end, dist) {
+      const totalDist = distance(start, end);
+      const ratio = dist / totalDist;
+      
+      return {
+        x: start.x + (end.x - start.x) * ratio,
+        y: start.y + (end.y - start.y) * ratio
+      };
+    }
+    
+    // Create a single hexagon with all line types
+    function createHexagon(centerX, centerY) {
+      const hexPoints = calculateHexagonPoints(centerX, centerY);
+      const center = { x: centerX, y: centerY };
+      const hexBlueYLines = [];
+      const hexBlueALines = [];
+      const hexBlackLines = [];
+      const hexRedLines = [];
+      
+      // Create Y and A lines from center to corners
+      for (let i = 0; i < corners; i++) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', center.x);
+        line.setAttribute('y1', center.y);
+        line.setAttribute('x2', hexPoints[i].x);
+        line.setAttribute('y2', hexPoints[i].y);
+        
+        if (i === 1 || i === 3 || i === 5) { // Y group
+          line.setAttribute('stroke', patternSettings.globalColor);
+          svg.appendChild(line);
+          hexBlueYLines.push({
+            element: line,
+            start: center,
+            end: hexPoints[i]
+          });
+        } else { // A group
+          line.setAttribute('stroke', patternSettings.globalColor);
+          svg.appendChild(line);
+          hexBlueALines.push({
+            element: line,
+            start: center,
+            end: hexPoints[i]
+          });
+        }
+        
+        line.setAttribute('stroke-width', patternSettings.blueYThickness);
+        line.setAttribute('stroke-opacity', '1');
+      }
+      
+      // Create red lines (extra lines)
+      for (let i = 0; i < corners; i++) {
+        const baseAngle = (Math.PI / 3) * i - Math.PI / 6;
+        
+        const angles = [
+          baseAngle + Math.PI/6, // +30°
+          baseAngle - Math.PI/6  // -30°
+        ];
+        
+        for (const angle of angles) {
+          const endX = centerX + hexRadius * Math.cos(angle);
+          const endY = centerY + hexRadius * Math.sin(angle);
+          const endpoint = { x: endX, y: endY };
+          
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', center.x);
+          line.setAttribute('y1', center.y);
+          line.setAttribute('x2', endX);
+          line.setAttribute('y2', endY);
+          line.setAttribute('stroke', patternSettings.globalColor);
+          line.setAttribute('stroke-width', patternSettings.redThickness);
+          line.setAttribute('stroke-opacity', '1');
+          svg.appendChild(line);
+          hexRedLines.push({
+            element: line,
+            start: center,
+            end: endpoint
+          });
+        }
+      }
+      
+      // Create hexagon outer lines (black)
+      for (let i = 0; i < corners; i++) {
+        const startPoint = hexPoints[i];
+        const endPoint = hexPoints[(i + 1) % corners];
+        
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', startPoint.x);
+        line.setAttribute('y1', startPoint.y);
+        line.setAttribute('x2', endPoint.x);
+        line.setAttribute('y2', endPoint.y);
+        line.setAttribute('stroke', patternSettings.globalColor);
+        line.setAttribute('stroke-width', patternSettings.blackThickness);
+        line.setAttribute('stroke-opacity', '1');
+        svg.appendChild(line);
+        hexBlackLines.push({
+          element: line,
+          start: startPoint,
+          end: endPoint
+        });
+      }
+      
+      return { 
+        blueYLines: hexBlueYLines,
+        blueALines: hexBlueALines,
+        blackLines: hexBlackLines, 
+        redLines: hexRedLines 
+      };
+    }
+    
+    // Update the visualization-frame dimensions based on the current aspect ratio
+    function updateVisualizationFrame() {
+      // Get the container dimensions
+      const container = document.querySelector('.visualization-container');
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      
+      // Calculate the maximum possible frame size that fits the container while maintaining the aspect ratio
+      let frameWidth, frameHeight;
+      
+      if (containerWidth / containerHeight > aspectRatio.width / aspectRatio.height) {
+        // Container is wider than the target aspect ratio, so height is the limiting factor
+        frameHeight = containerHeight;
+        frameWidth = frameHeight * (aspectRatio.width / aspectRatio.height);
+      } else {
+        // Container is taller than the target aspect ratio, so width is the limiting factor
+        frameWidth = containerWidth;
+        frameHeight = frameWidth * (aspectRatio.height / aspectRatio.width);
+      }
+      
+      // Update frame dimensions
+      frame.style.width = `${frameWidth}px`;
+      frame.style.height = `${frameHeight}px`;
+      
+      // Update the viewBox on the SVG to match the new aspect ratio
+      svg.setAttribute('viewBox', `0 0 ${aspectRatio.width * 100} ${aspectRatio.height * 100}`);
+      
+      // Regenerate the visualization
+      initVisualization();
+    }
+    
+    // Initialize the visualization
+    function initVisualization() {
+      // Clear existing SVG elements
+      while (svg.firstChild) {
+        svg.removeChild(svg.firstChild);
+      }
+      
+      // Reset line arrays
+      blueYLines = [];
+      blueALines = [];
+      blackLines = [];
+      redLines = [];
+      
+      // Set SVG background
+      svg.style.backgroundColor = patternSettings.backgroundColor;
+      
+      // Calculate hexagon dimensions
+      const hexHeight = hexRadius * 2;
+      const hexWidth = hexRadius * Math.sqrt(3);
+      
+      // Get SVG viewport dimensions from viewBox
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      
+      // Calculate grid spacing
+      const horizontalSpacing = hexWidth;
+      const verticalSpacing = hexHeight * 0.75;
+      
+      // Calculate how many hexagons needed to fill viewport plus one extra row/column to each side
+      const numCols = Math.ceil(viewportWidth / horizontalSpacing) + 2;
+      const numRows = Math.ceil(viewportHeight / verticalSpacing) + 2;
+      
+      // Calculate starting positions to center the grid
+      const startX = 0 - horizontalSpacing;
+      const startY = 0 - verticalSpacing;
+      
+      // Create hexagon grid with precise positioning
+      for (let row = 0; row < numRows; row++) {
+        // Offset every other row for proper tessellation
+        const rowOffset = (row % 2 === 0) ? 0 : hexWidth / 2;
+        
+        for (let col = 0; col < numCols; col++) {
+          // Calculate center positions with precise mathematical spacing
+          const centerX = startX + (col * horizontalSpacing) + rowOffset;
+          const centerY = startY + (row * verticalSpacing);
+          
+          const { blueYLines: hexBlueYLines, blueALines: hexBlueALines, blackLines: hexBlackLines, redLines: hexRedLines } = createHexagon(centerX, centerY);
+          blueYLines.push(...hexBlueYLines);
+          blueALines.push(...hexBlueALines);
+          blackLines.push(...hexBlackLines);
+          redLines.push(...hexRedLines);
+        }
+      }
+      
+      // Apply pattern settings
+      updatePatternSettings();
+    }
+    
+    // Apply pattern settings to lines
+    function updatePatternSettings() {
+      // Update Y lines
+      blueYLines.forEach(line => {
+        line.element.setAttribute('stroke', patternSettings.globalColor);
+        line.element.setAttribute('stroke-width', patternSettings.blueYThickness);
+        line.element.setAttribute('stroke-opacity', patternSettings.blueYVisible ? '1' : '0');
+        
+        // Apply line length
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (patternSettings.blueYLength / 100);
+        const gapSize = (totalLength - visibleLength) / 2; // Divide by 2 to apply from both sides
+        
+        if (patternSettings.blueYLength > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          // For 0% case, make line invisible
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+      });
+      
+      // Update A lines
+      blueALines.forEach(line => {
+        line.element.setAttribute('stroke', patternSettings.globalColor);
+        line.element.setAttribute('stroke-width', patternSettings.blueAThickness);
+        line.element.setAttribute('stroke-opacity', patternSettings.blueAVisible ? '1' : '0');
+        
+        // Apply line length
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (patternSettings.blueALength / 100);
+        const gapSize = (totalLength - visibleLength) / 2;
+        
+        if (patternSettings.blueALength > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          // For 0% case, make line invisible
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+      });
+      
+      // Update Black lines
+      blackLines.forEach(line => {
+        line.element.setAttribute('stroke', patternSettings.globalColor);
+        line.element.setAttribute('stroke-width', patternSettings.blackThickness);
+        line.element.setAttribute('stroke-opacity', patternSettings.blackVisible ? '1' : '0');
+        
+        // Apply line length
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (patternSettings.blackLength / 100);
+        const gapSize = (totalLength - visibleLength) / 2;
+        
+        if (patternSettings.blackLength > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          // For 0% case, make line invisible
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+      });
+      
+      // Update Red lines
+      redLines.forEach(line => {
+        line.element.setAttribute('stroke', patternSettings.globalColor);
+        line.element.setAttribute('stroke-width', patternSettings.redThickness);
+        line.element.setAttribute('stroke-opacity', patternSettings.redVisible ? '1' : '0');
+        
+        // Apply line length
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (patternSettings.redLength / 100);
+        const gapSize = (totalLength - visibleLength) / 2;
+        
+        if (patternSettings.redLength > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          // For 0% case, make line invisible
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+      });
+    }
+    
+    // Parse a ratio string like "16:9" to an object {width: 16, height: 9}
+    function parseRatio(ratioStr) {
+      const parts = ratioStr.split(':');
+      return {
+        width: parseInt(parts[0], 10),
+        height: parseInt(parts[1], 10)
+      };
+    }
+    
+    // Event listeners
+    window.addEventListener('DOMContentLoaded', () => {
+      // Load pattern settings from localStorage
+      if (loadPatternSettings()) {
+        console.log('Pattern settings loaded:', patternSettings);
+      }
+      
+      // Set up event listeners
+      sizeSlider.addEventListener('input', function() {
+        hexRadius = parseInt(this.value, 10);
+        sizeValue.textContent = hexRadius;
+        initVisualization();
+      });
+      
+      ratioSelect.addEventListener('change', function() {
+        aspectRatio = parseRatio(this.value);
+        updateVisualizationFrame();
+      });
+      
+      backButton.addEventListener('click', function() {
+        window.location.href = 'index.html';
+      });
+      
+      // Set initial aspect ratio to 1:1
+      aspectRatio = parseRatio(ratioSelect.value);
+      
+      // Set initial size slider value
+      sizeSlider.value = hexRadius;
+      sizeValue.textContent = hexRadius;
+      
+      // Initial setup of the visualization frame and grid
+      updateVisualizationFrame();
+      
+      // Handle window resize
+      window.addEventListener('resize', updateVisualizationFrame);
+    });
+  </script>
+</body>
+</html>
