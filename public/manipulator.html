@@ -229,27 +229,27 @@
       <div class="manipulator-container">
         <div class="manipulator-section">
           <div class="control-item">
-            <button class="button" id="globeCleanButton">Globe Clean</button>
+            <button class="button" id="globeCleanButton" style="background-color: #0BC5BA;">Globe</button>
           </div>
         </div>
         
         
-        <div id="globeCleanControls" class="manipulator-controls">
-          <h4>Globe Clean Settings</h4>
+        <div id="globeCleanControls" class="manipulator-controls" style="display: block;">
+          <h4>Globe Settings</h4>
           <div class="manipulator-control-item toggle-container">
             <label for="cleanSphereOutlineToggle">Sphere Outline:</label>
             <input type="checkbox" id="cleanSphereOutlineToggle" checked>
           </div>
           <div class="manipulator-control-item">
-            <label for="cleanSphereDiameter">Sphere Diameter: <span id="cleanSphereDiameterValue">100</span>%</label>
+            <label for="cleanSphereDiameter">Sphere Diameter: <span id="cleanSphereDiameterValue">75</span>%</label>
             <div class="slider-container">
-              <input type="range" id="cleanSphereDiameter" min="10" max="300" value="100">
+              <input type="range" id="cleanSphereDiameter" min="10" max="300" value="75">
             </div>
           </div>
           <div class="manipulator-control-item">
-            <label for="cleanWrapIntensity">Wrap Intensity: <span id="cleanWrapIntensityValue">0</span>%</label>
+            <label for="cleanWrapIntensity">Wrap Intensity: <span id="cleanWrapIntensityValue">100</span>%</label>
             <div class="slider-container">
-              <input type="range" id="cleanWrapIntensity" min="0" max="100" value="0">
+              <input type="range" id="cleanWrapIntensity" min="0" max="100" value="100">
             </div>
           </div>
         </div>
@@ -275,11 +275,11 @@
     // Line width scaling
     let lineWidthScale = 1; // Will adjust to maintain consistent line width ratios
     
-    // Globe Clean manipulator configuration
-    let globeCleanActive = false;
+    // Globe manipulator configuration
+    let globeCleanActive = true;
     let cleanSphereOutlineVisible = true;
-    let cleanSphereDiameter = 100; // percentage of viewport
-    let cleanWrapIntensity = 0; // percentage of wrapping
+    let cleanSphereDiameter = 75; // percentage of viewport
+    let cleanWrapIntensity = 100; // percentage of wrapping
     
     // Pattern storage
     let patternSettings = {
@@ -1145,6 +1145,9 @@
       
       // Initial setup of the visualization frame and grid
       updateVisualizationFrame();
+      
+      // Apply globe wrapping effect by default since it's active
+      applyGlobeCleanWrapping();
       
       // Handle window resize
       window.addEventListener('resize', function() {
