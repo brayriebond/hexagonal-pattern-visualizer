@@ -1348,6 +1348,10 @@
         wrapIntensity = parseInt(this.value, 10);
         wrapIntensityValue.textContent = wrapIntensity;
         applyGlobeWrapping();
+        
+        // Update patternSettings to preserve any effects of manipulation
+        // We keep the same pattern properties (line lengths, colors, etc.)
+        // but the pattern will be preserved when returning to the pattern maker
       });
       
       // Globe Clean button click handler
@@ -1435,6 +1439,11 @@
       });
       
       backButton.addEventListener('click', function() {
+        // Save the current pattern settings before navigating back
+        // This ensures the pattern is maintained when returning to pattern maker
+        localStorage.setItem('hexagonPattern', JSON.stringify(patternSettings));
+        
+        // Navigate back to the pattern maker page
         window.location.href = 'index.html';
       });
       
