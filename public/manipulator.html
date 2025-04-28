@@ -222,6 +222,9 @@
           <span class="value-display">hexagons</span>
         </div>
       </div>
+      <div class="control-item">
+        <button class="button" id="exportButton" style="width: 100%; margin-top: 8px;">Export as SVG</button>
+      </div>
     </div>
 
     <div class="control-group manipulator-buttons">
@@ -229,27 +232,27 @@
       <div class="manipulator-container">
         <div class="manipulator-section">
           <div class="control-item">
-            <button class="button" id="globeCleanButton">Globe Clean</button>
+            <button class="button" id="globeCleanButton" style="background-color: #0BC5BA;">Globe</button>
           </div>
         </div>
         
         
-        <div id="globeCleanControls" class="manipulator-controls">
-          <h4>Globe Clean Settings</h4>
+        <div id="globeCleanControls" class="manipulator-controls" style="display: block;">
+          <h4>Globe Settings</h4>
           <div class="manipulator-control-item toggle-container">
             <label for="cleanSphereOutlineToggle">Sphere Outline:</label>
             <input type="checkbox" id="cleanSphereOutlineToggle" checked>
           </div>
           <div class="manipulator-control-item">
-            <label for="cleanSphereDiameter">Sphere Diameter: <span id="cleanSphereDiameterValue">100</span>%</label>
+            <label for="cleanSphereDiameter">Sphere Diameter: <span id="cleanSphereDiameterValue">75</span>%</label>
             <div class="slider-container">
-              <input type="range" id="cleanSphereDiameter" min="10" max="300" value="100">
+              <input type="range" id="cleanSphereDiameter" min="10" max="300" value="75">
             </div>
           </div>
           <div class="manipulator-control-item">
-            <label for="cleanWrapIntensity">Wrap Intensity: <span id="cleanWrapIntensityValue">0</span>%</label>
+            <label for="cleanWrapIntensity">Wrap Intensity: <span id="cleanWrapIntensityValue">100</span>%</label>
             <div class="slider-container">
-              <input type="range" id="cleanWrapIntensity" min="0" max="100" value="0">
+              <input type="range" id="cleanWrapIntensity" min="0" max="100" value="100">
             </div>
           </div>
         </div>
@@ -275,11 +278,11 @@
     // Line width scaling
     let lineWidthScale = 1; // Will adjust to maintain consistent line width ratios
     
-    // Globe Clean manipulator configuration
-    let globeCleanActive = false;
+    // Globe manipulator configuration
+    let globeCleanActive = true;
     let cleanSphereOutlineVisible = true;
-    let cleanSphereDiameter = 100; // percentage of viewport
-    let cleanWrapIntensity = 0; // percentage of wrapping
+    let cleanSphereDiameter = 75; // percentage of viewport
+    let cleanWrapIntensity = 100; // percentage of wrapping
     
     // Pattern storage
     let patternSettings = {
@@ -1140,11 +1143,122 @@
         window.location.href = 'index.html';
       });
       
+      // Set up event listener for export button
+      const exportButton = document.getElementById('exportButton');
+      exportButton.addEventListener('click', function() {
+        // Create a new SVG element for export
+        const exportSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        
+        // Get current SVG dimensions and viewBox
+        const viewBox = svg.viewBox.baseVal;
+        const backgroundColor = svg.style.backgroundColor || patternSettings.backgroundColor;
+        
+        // Get viewport center and sphere radius for clipping
+        const viewportWidth = viewBox.width;
+        const viewportHeight = viewBox.height;
+        const centerX = viewportWidth / 2;
+        const centerY = viewportHeight / 2;
+        
+        // Calculate sphere radius based on the smaller dimension and the diameter setting
+        const minDimension = Math.min(viewportWidth, viewportHeight);
+        const sphereRadius = (minDimension / 2) * (cleanSphereDiameter / 100);
+        
+        // For globe mode, we'll export all visible elements without a clip path
+        // but focus the viewBox on the globe area with a buffer
+        if (globeCleanActive) {
+          // Calculate a buffer to ensure we capture all visible elements at the edges
+          // This ensures lines that extend slightly beyond the sphere's mathematical
+          // boundary are still included
+          const bufferPercentage = 0.2; // 20% buffer for better edge capture
+          const bufferSize = sphereRadius * bufferPercentage;
+          
+          // Set the viewBox to focus on the globe area plus buffer
+          const globeLeft = centerX - sphereRadius - bufferSize;
+          const globeTop = centerY - sphereRadius - bufferSize;
+          const globeSize = (sphereRadius + bufferSize) * 2;
+          
+          exportSvg.setAttribute('width', globeSize);
+          exportSvg.setAttribute('height', globeSize);
+          exportSvg.setAttribute('viewBox', `${globeLeft} ${globeTop} ${globeSize} ${globeSize}`);
+        } else {
+          // Use the full viewBox if not in globe mode
+          exportSvg.setAttribute('width', viewBox.width);
+          exportSvg.setAttribute('height', viewBox.height);
+          exportSvg.setAttribute('viewBox', `0 0 ${viewBox.width} ${viewBox.height}`);
+        }
+        
+        exportSvg.setAttribute('style', `background-color: ${backgroundColor};`);
+        exportSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        
+        // Clone all visible SVG elements but skip the sphere outline
+        // We'll add them directly to the SVG element (no clipping)
+        Array.from(svg.children).forEach(child => {
+          // Skip the sphere outline
+          if (!child.classList.contains('sphere-outline')) {
+            // Get line endpoints to determine if it should be visible
+            if (globeCleanActive && child.tagName === 'line') {
+              const x1 = parseFloat(child.getAttribute('x1'));
+              const y1 = parseFloat(child.getAttribute('y1'));
+              const x2 = parseFloat(child.getAttribute('x2'));
+              const y2 = parseFloat(child.getAttribute('y2'));
+              
+              // Get stroke opacity to check if the line is currently visible
+              const opacity = parseFloat(child.getAttribute('stroke-opacity') || '1');
+              
+              // Only include the line if it's visible (opacity > 0)
+              if (opacity > 0) {
+                const clonedNode = child.cloneNode(true);
+                exportSvg.appendChild(clonedNode);
+              }
+            } else {
+              // For non-line elements or when not in globe mode
+              const clonedNode = child.cloneNode(true);
+              exportSvg.appendChild(clonedNode);
+            }
+          }
+        });
+        
+        // Convert the SVG to a string
+        const serializer = new XMLSerializer();
+        let svgString = serializer.serializeToString(exportSvg);
+        
+        // Add XML declaration
+        svgString = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + svgString;
+        
+        // Create a Blob with the SVG content
+        const blob = new Blob([svgString], {type: 'image/svg+xml'});
+        
+        // Create a download link
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(blob);
+        
+        // Add formatted timestamp to filename
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        // Include the wrap effect in the filename if active
+        let filename = `hexagon-pattern`;
+        if (globeCleanActive) {
+          filename += `_globe-${cleanSphereDiameter}diam-${cleanWrapIntensity}wrap`;
+        }
+        filename += `_${timestamp}.svg`;
+        
+        downloadLink.download = filename;
+        
+        // Trigger the download
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      });
+      
       // Set initial aspect ratio to 1:1
       aspectRatio = parseRatio(ratioSelect.value);
       
       // Initial setup of the visualization frame and grid
       updateVisualizationFrame();
+      
+      // Apply globe wrapping effect by default since it's active
+      applyGlobeCleanWrapping();
       
       // Handle window resize
       window.addEventListener('resize', function() {
