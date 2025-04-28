@@ -188,7 +188,10 @@
   <div class="control-panel">
     <h2>Hexagon Grid Controls</h2>
     
-    <button class="randomize-button" id="randomizeButton">Randomize All Settings</button>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+      <button class="randomize-button" id="randomizeButton">Randomize All Settings</button>
+      <button class="randomize-button" id="resetButton" style="background-color: #555;">Reset to Default</button>
+    </div>
     
     <div class="background-control">
       <div class="background-control-header">
@@ -207,7 +210,8 @@
         <span class="value-display">hexagons</span>
       </div>
       
-      <button class="randomize-button" id="exportButton" style="background-color: #333; width: 100%;">Export as SVG</button>
+      <button class="randomize-button" id="exportButton" style="background-color: #333; width: 100%; margin-bottom: 8px;">Export as SVG</button>
+      <button class="randomize-button" id="openManipulatorButton" style="background-color: #555; width: 100%;">Open Shape Manipulator</button>
     </div>
     
     <div class="background-control">
@@ -837,9 +841,142 @@
       }
     }
     
+    // Function to load pattern settings from localStorage
+    function loadPatternSettings() {
+      const savedPattern = localStorage.getItem('hexagonPattern');
+      if (savedPattern) {
+        try {
+          const patternSettings = JSON.parse(savedPattern);
+          
+          // Apply pattern settings to UI controls
+          document.getElementById('blueYGapSize').value = patternSettings.blueYLength;
+          document.getElementById('blueYGapSizeValue').textContent = patternSettings.blueYLength + '%';
+          document.getElementById('blueYOpacity').checked = patternSettings.blueYVisible;
+          
+          document.getElementById('blueAGapSize').value = patternSettings.blueALength;
+          document.getElementById('blueAGapSizeValue').textContent = patternSettings.blueALength + '%';
+          document.getElementById('blueAOpacity').checked = patternSettings.blueAVisible;
+          
+          document.getElementById('blackGapSize').value = patternSettings.blackLength;
+          document.getElementById('blackGapSizeValue').textContent = patternSettings.blackLength + '%';
+          document.getElementById('blackOpacity').checked = patternSettings.blackVisible;
+          
+          document.getElementById('redGapSize').value = patternSettings.redLength;
+          document.getElementById('redGapSizeValue').textContent = patternSettings.redLength + '%';
+          document.getElementById('redOpacity').checked = patternSettings.redVisible;
+          
+          document.getElementById('globalColor').value = patternSettings.globalColor;
+          document.getElementById('globalColorPreview').style.backgroundColor = patternSettings.globalColor;
+          
+          document.getElementById('backgroundColor').value = patternSettings.backgroundColor;
+          document.getElementById('backgroundColorPreview').style.backgroundColor = patternSettings.backgroundColor;
+          
+          // Determine if we should use equal thickness or individual thicknesses
+          const allThicknessEqual = 
+            patternSettings.blueYThickness === patternSettings.blueAThickness && 
+            patternSettings.blueYThickness === patternSettings.blackThickness && 
+            patternSettings.blueYThickness === patternSettings.redThickness;
+          
+          document.getElementById('equalThickness').checked = allThicknessEqual;
+          
+          if (allThicknessEqual) {
+            document.getElementById('globalThickness').value = patternSettings.blueYThickness;
+            document.getElementById('globalThicknessValue').textContent = patternSettings.blueYThickness.toFixed(1);
+          } else {
+            document.getElementById('blueYThickness').value = patternSettings.blueYThickness;
+            document.getElementById('blueYThicknessValue').textContent = patternSettings.blueYThickness.toFixed(1);
+            
+            document.getElementById('blueAThickness').value = patternSettings.blueAThickness;
+            document.getElementById('blueAThicknessValue').textContent = patternSettings.blueAThickness.toFixed(1);
+            
+            document.getElementById('blackThickness').value = patternSettings.blackThickness;
+            document.getElementById('blackThicknessValue').textContent = patternSettings.blackThickness.toFixed(1);
+            
+            document.getElementById('redThickness').value = patternSettings.redThickness;
+            document.getElementById('redThicknessValue').textContent = patternSettings.redThickness.toFixed(1);
+          }
+          
+          // First initialize the visualization with the hexagon grid
+          initVisualization();
+          
+          // Then update all settings to reflect the loaded pattern
+          updateAllSettings();
+          
+          // Update background color
+          updateBackgroundColor(patternSettings.backgroundColor);
+          
+          return true;
+        } catch (e) {
+          console.error('Error parsing saved pattern:', e);
+          return false;
+        }
+      }
+      return false;
+    }
+    
+    // Function to reset pattern to default settings
+    function resetToDefaultSettings() {
+      // Default values
+      document.getElementById('blueYGapSize').value = 100;
+      document.getElementById('blueYGapSizeValue').textContent = '100%';
+      document.getElementById('blueYOpacity').checked = true;
+      
+      document.getElementById('blueAGapSize').value = 100;
+      document.getElementById('blueAGapSizeValue').textContent = '100%';
+      document.getElementById('blueAOpacity').checked = true;
+      
+      document.getElementById('blackGapSize').value = 100;
+      document.getElementById('blackGapSizeValue').textContent = '100%';
+      document.getElementById('blackOpacity').checked = true;
+      
+      document.getElementById('redGapSize').value = 100;
+      document.getElementById('redGapSizeValue').textContent = '100%';
+      document.getElementById('redOpacity').checked = true;
+      
+      document.getElementById('globalColor').value = '#0BC5BA';
+      document.getElementById('globalColorPreview').style.backgroundColor = '#0BC5BA';
+      
+      document.getElementById('backgroundColor').value = '#FFFFFF';
+      document.getElementById('backgroundColorPreview').style.backgroundColor = '#FFFFFF';
+      
+      document.getElementById('equalThickness').checked = true;
+      document.getElementById('globalThickness').value = 1.5;
+      document.getElementById('globalThicknessValue').textContent = '1.5';
+      
+      document.getElementById('blueYThickness').value = 1.5;
+      document.getElementById('blueYThicknessValue').textContent = '1.5';
+      
+      document.getElementById('blueAThickness').value = 1.5;
+      document.getElementById('blueAThicknessValue').textContent = '1.5';
+      
+      document.getElementById('blackThickness').value = 1.5;
+      document.getElementById('blackThicknessValue').textContent = '1.5';
+      
+      document.getElementById('redThickness').value = 1.0;
+      document.getElementById('redThicknessValue').textContent = '1.0';
+      
+      // Update thickness controls visibility
+      toggleThicknessControls();
+      
+      // Clear localStorage
+      localStorage.removeItem('hexagonPattern');
+      
+      // Completely reinitialize the visualization to ensure it's fully redrawn
+      initVisualization();
+      
+      // Update background color
+      updateBackgroundColor('#FFFFFF');
+    }
+    
     // Initialize with the hexagon grid
     window.addEventListener('DOMContentLoaded', function() {
-      initVisualization();
+      // Try to load saved pattern first before initializing
+      const patternLoaded = loadPatternSettings();
+      
+      // If no pattern was loaded, initialize with defaults
+      if (!patternLoaded) {
+        initVisualization();
+      }
       
       // Initialize thickness controls based on the equal thickness checkbox state
       toggleThicknessControls();
@@ -896,6 +1033,9 @@
       
       // Set up event listener for randomize button
       document.getElementById('randomizeButton').addEventListener('click', randomizeSettings);
+      
+      // Set up event listener for reset button
+      document.getElementById('resetButton').addEventListener('click', resetToDefaultSettings);
       
       // Set up event listeners for blue Y lines
       const blueYGapSlider = document.getElementById('blueYGapSize');
@@ -991,6 +1131,40 @@
         const value = parseFloat(this.value);
         redThicknessValue.textContent = value.toFixed(1);
         updateRedThickness(value);
+      });
+      
+      // Set up event listener for Open Shape Manipulator button
+      document.getElementById('openManipulatorButton').addEventListener('click', function() {
+        // Save current pattern settings to localStorage
+        const patternSettings = {
+          blueYLength: parseInt(document.getElementById('blueYGapSize').value),
+          blueYVisible: document.getElementById('blueYOpacity').checked,
+          blueALength: parseInt(document.getElementById('blueAGapSize').value),
+          blueAVisible: document.getElementById('blueAOpacity').checked,
+          blackLength: parseInt(document.getElementById('blackGapSize').value),
+          blackVisible: document.getElementById('blackOpacity').checked,
+          redLength: parseInt(document.getElementById('redGapSize').value),
+          redVisible: document.getElementById('redOpacity').checked,
+          globalColor: document.getElementById('globalColor').value,
+          backgroundColor: document.getElementById('backgroundColor').value,
+          blueYThickness: document.getElementById('equalThickness').checked ? 
+                           parseFloat(document.getElementById('globalThickness').value) : 
+                           parseFloat(document.getElementById('blueYThickness').value),
+          blueAThickness: document.getElementById('equalThickness').checked ? 
+                           parseFloat(document.getElementById('globalThickness').value) : 
+                           parseFloat(document.getElementById('blueAThickness').value),
+          blackThickness: document.getElementById('equalThickness').checked ? 
+                           parseFloat(document.getElementById('globalThickness').value) : 
+                           parseFloat(document.getElementById('blackThickness').value),
+          redThickness: document.getElementById('equalThickness').checked ? 
+                           parseFloat(document.getElementById('globalThickness').value) : 
+                           parseFloat(document.getElementById('redThickness').value)
+        };
+        
+        localStorage.setItem('hexagonPattern', JSON.stringify(patternSettings));
+        
+        // Navigate to the manipulator page
+        window.location.href = 'manipulator.html';
       });
       
       // Set up event listener for export button

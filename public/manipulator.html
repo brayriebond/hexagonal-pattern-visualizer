@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shape Manipulator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      box-sizing: border-box;
+      color: #333;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      min-width: 200px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 12px;
+    }
+    
+    .control-group h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .control-item {
+      margin-bottom: 12px;
+    }
+    
+    .control-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    input[type="range"] {
+      flex-grow: 1;
+      height: 6px;
+      accent-color: #000;
+    }
+    
+    .value-display {
+      width: 50px;
+      text-align: right;
+      font-size: 14px;
+    }
+    
+    .button {
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    
+    .button:hover {
+      background-color: #555;
+    }
+    
+    .back-button {
+      background-color: #555;
+    }
+    
+    .visualization-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    .visualization-frame {
+      position: relative;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+      overflow: hidden;
+      transition: width 0.3s, height 0.3s;
+    }
+    
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* Manipulator container styles */
+    .manipulator-container {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    
+    .manipulator-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .manipulator-controls {
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 12px;
+      width: 250px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: none;
+    }
+    
+    /* For mobile responsiveness */
+    @media (max-width: 768px) {
+      .manipulator-container {
+        flex-direction: column;
+      }
+    }
+    
+    .manipulator-controls h4 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+    
+    .manipulator-control-item {
+      margin-bottom: 12px;
+    }
+    
+    .manipulator-control-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .sphere-outline {
+      fill: none;
+      stroke: #666;
+      stroke-width: 1;
+      stroke-dasharray: 4 4;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>Shape Manipulator</h2>
+    <button class="button back-button" id="backButton">Back to Pattern Maker Page</button>
+  </div>
+  
+  <div class="controls">
+    <div class="control-group">
+      <h3>Screen Ratio</h3>
+      <div class="control-item">
+        <label for="screenRatio">Select Ratio:</label>
+        <select id="screenRatio" class="screen-ratio-select">
+          <option value="1:1">1:1 (Square)</option>
+          <option value="3:4">3:4 (Portrait)</option>
+          <option value="4:3">4:3 (Landscape)</option>
+          <option value="2:3">2:3 (Portrait)</option>
+          <option value="3:2">3:2 (Landscape)</option>
+          <option value="9:16">9:16 (Portrait)</option>
+          <option value="16:9">16:9 (Landscape)</option>
+          <option value="1:3">1:3 (Tall Portrait)</option>
+          <option value="3:1">3:1 (Wide Landscape)</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="control-group">
+      <h3>Pattern Size</h3>
+      <div class="control-item">
+        <div class="slider-container">
+          <label for="hexCount">Hexagons Wide:</label>
+          <input type="number" id="hexCount" min="1" max="100" value="5" style="width: 60px;">
+          <span class="value-display">hexagons</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group manipulator-buttons">
+      <h3>Manipulators</h3>
+      <div class="manipulator-container">
+        <div class="manipulator-section">
+          <div class="control-item">
+            <button class="button" id="globeButton">Globe</button>
+          </div>
+          <div class="control-item">
+            <button class="button" id="globeCleanButton">Globe Clean</button>
+          </div>
+        </div>
+        
+        <div id="globeControls" class="manipulator-controls">
+          <h4>Globe Settings</h4>
+          <div class="manipulator-control-item toggle-container">
+            <label for="sphereOutlineToggle">Sphere Outline:</label>
+            <input type="checkbox" id="sphereOutlineToggle" checked>
+          </div>
+          <div class="manipulator-control-item">
+            <label for="sphereDiameter">Sphere Diameter: <span id="sphereDiameterValue">100</span>%</label>
+            <div class="slider-container">
+              <input type="range" id="sphereDiameter" min="10" max="300" value="100">
+            </div>
+          </div>
+          <div class="manipulator-control-item">
+            <label for="wrapIntensity">Wrap Intensity: <span id="wrapIntensityValue">0</span>%</label>
+            <div class="slider-container">
+              <input type="range" id="wrapIntensity" min="0" max="100" value="0">
+            </div>
+          </div>
+        </div>
+        
+        <div id="globeCleanControls" class="manipulator-controls">
+          <h4>Globe Clean Settings</h4>
+          <div class="manipulator-control-item toggle-container">
+            <label for="cleanSphereOutlineToggle">Sphere Outline:</label>
+            <input type="checkbox" id="cleanSphereOutlineToggle" checked>
+          </div>
+          <div class="manipulator-control-item">
+            <label for="cleanSphereDiameter">Sphere Diameter: <span id="cleanSphereDiameterValue">100</span>%</label>
+            <div class="slider-container">
+              <input type="range" id="cleanSphereDiameter" min="10" max="300" value="100">
+            </div>
+          </div>
+          <div class="manipulator-control-item">
+            <label for="cleanWrapIntensity">Wrap Intensity: <span id="cleanWrapIntensityValue">0</span>%</label>
+            <div class="slider-container">
+              <input type="range" id="cleanWrapIntensity" min="0" max="100" value="0">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="visualization-container">
+    <div class="visualization-frame" id="visualizationFrame">
+      <svg id="hexagonSvg" viewBox="0 0 800 600">
+        <!-- Hexagon grid will be drawn here -->
+      </svg>
+    </div>
+  </div>
+  
+  <script>
+    // Configuration
+    const baseHexRadius = 60; // Base reference radius from the pattern maker
+    let hexRadius; // Will be calculated based on hexCount and viewport
+    const corners = 6;
+    let aspectRatio = { width: 1, height: 1 }; // Default 1:1 ratio
+    
+    // Line width scaling
+    let lineWidthScale = 1; // Will adjust to maintain consistent line width ratios
+    
+    // Globe manipulator configuration
+    let globeActive = false;
+    let sphereOutlineVisible = true;
+    let sphereDiameter = 100; // percentage of viewport
+    let wrapIntensity = 0; // percentage of wrapping
+    
+    // Globe Clean manipulator configuration
+    let globeCleanActive = false;
+    let cleanSphereOutlineVisible = true;
+    let cleanSphereDiameter = 100; // percentage of viewport
+    let cleanWrapIntensity = 0; // percentage of wrapping
+    
+    // Pattern storage
+    let patternSettings = {
+      blueYLength: 100,
+      blueYVisible: true,
+      blueALength: 100,
+      blueAVisible: true,
+      blackLength: 100,
+      blackVisible: true,
+      redLength: 100,
+      redVisible: true,
+      globalColor: '#0BC5BA',
+      backgroundColor: '#FFFFFF',
+      blueYThickness: 1.5,
+      blueAThickness: 1.5,
+      blackThickness: 1.5,
+      redThickness: 1.0
+    };
+    
+    // DOM Elements
+    const svg = document.getElementById('hexagonSvg');
+    const frame = document.getElementById('visualizationFrame');
+    const hexCountInput = document.getElementById('hexCount');
+    const ratioSelect = document.getElementById('screenRatio');
+    const backButton = document.getElementById('backButton');
+    
+    // Line elements arrays
+    let blueYLines = [];
+    let blueALines = [];
+    let blackLines = [];
+    let redLines = [];
+    
+    // Get pattern settings from localStorage if available
+    function loadPatternSettings() {
+      const savedPattern = localStorage.getItem('hexagonPattern');
+      if (savedPattern) {
+        try {
+          patternSettings = JSON.parse(savedPattern);
+          return true;
+        } catch (e) {
+          console.error('Error parsing saved pattern:', e);
+          return false;
+        }
+      }
+      return false;
+    }
+    
+    // Calculate hexagon corners for a center point
+    function calculateHexagonPoints(centerX, centerY, radius) {
+      const points = [];
+      for (let i = 0; i < corners; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 6;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        points.push({ x, y });
+      }
+      return points;
+    }
+    
+    // Calculate distance between two points
+    function distance(p1, p2) {
+      return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+    }
+    
+    // Calculate point at a certain distance from start along a line to end
+    function pointAtDistance(start, end, dist) {
+      const totalDist = distance(start, end);
+      const ratio = dist / totalDist;
+      
+      return {
+        x: start.x + (end.x - start.x) * ratio,
+        y: start.y + (end.y - start.y) * ratio
+      };
+    }
+    
+    // Create a single hexagon with all line types
+    function createHexagon(centerX, centerY, radius) {
+      const hexPoints = calculateHexagonPoints(centerX, centerY, radius);
+      const center = { x: centerX, y: centerY };
+      const hexBlueYLines = [];
+      const hexBlueALines = [];
+      const hexBlackLines = [];
+      const hexRedLines = [];
+      
+      // Calculate scaled line thickness to maintain proportions
+      const scaledBlueYThickness = patternSettings.blueYThickness * lineWidthScale;
+      const scaledBlueAThickness = patternSettings.blueAThickness * lineWidthScale;
+      const scaledBlackThickness = patternSettings.blackThickness * lineWidthScale;
+      const scaledRedThickness = patternSettings.redThickness * lineWidthScale;
+      
+      // Create Y and A lines from center to corners
+      for (let i = 0; i < corners; i++) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', center.x);
+        line.setAttribute('y1', center.y);
+        line.setAttribute('x2', hexPoints[i].x);
+        line.setAttribute('y2', hexPoints[i].y);
+        
+        if (i === 1 || i === 3 || i === 5) { // Y group
+          line.setAttribute('stroke', patternSettings.globalColor);
+          line.setAttribute('stroke-width', scaledBlueYThickness);
+          svg.appendChild(line);
+          hexBlueYLines.push({
+            element: line,
+            start: center,
+            end: hexPoints[i]
+          });
+        } else { // A group
+          line.setAttribute('stroke', patternSettings.globalColor);
+          line.setAttribute('stroke-width', scaledBlueAThickness);
+          svg.appendChild(line);
+          hexBlueALines.push({
+            element: line,
+            start: center,
+            end: hexPoints[i]
+          });
+        }
+        
+        line.setAttribute('stroke-opacity', '1');
+      }
+      
+      // Create red lines (extra lines)
+      for (let i = 0; i < corners; i++) {
+        const baseAngle = (Math.PI / 3) * i - Math.PI / 6;
+        
+        const angles = [
+          baseAngle + Math.PI/6, // +30°
+          baseAngle - Math.PI/6  // -30°
+        ];
+        
+        for (const angle of angles) {
+          const endX = centerX + radius * Math.cos(angle);
+          const endY = centerY + radius * Math.sin(angle);
+          const endpoint = { x: endX, y: endY };
+          
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', center.x);
+          line.setAttribute('y1', center.y);
+          line.setAttribute('x2', endX);
+          line.setAttribute('y2', endY);
+          line.setAttribute('stroke', patternSettings.globalColor);
+          line.setAttribute('stroke-width', scaledRedThickness);
+          line.setAttribute('stroke-opacity', '1');
+          svg.appendChild(line);
+          hexRedLines.push({
+            element: line,
+            start: center,
+            end: endpoint
+          });
+        }
+      }
+      
+      // Create hexagon outer lines (black)
+      for (let i = 0; i < corners; i++) {
+        const startPoint = hexPoints[i];
+        const endPoint = hexPoints[(i + 1) % corners];
+        
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', startPoint.x);
+        line.setAttribute('y1', startPoint.y);
+        line.setAttribute('x2', endPoint.x);
+        line.setAttribute('y2', endPoint.y);
+        line.setAttribute('stroke', patternSettings.globalColor);
+        line.setAttribute('stroke-width', scaledBlackThickness);
+        line.setAttribute('stroke-opacity', '1');
+        svg.appendChild(line);
+        hexBlackLines.push({
+          element: line,
+          start: startPoint,
+          end: endPoint
+        });
+      }
+      
+      return { 
+        blueYLines: hexBlueYLines,
+        blueALines: hexBlueALines,
+        blackLines: hexBlackLines, 
+        redLines: hexRedLines 
+      };
+    }
+    
+    // Update the visualization-frame dimensions based on the current aspect ratio
+    function updateVisualizationFrame() {
+      // Get the container dimensions
+      const container = document.querySelector('.visualization-container');
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      
+      // Calculate the maximum possible frame size that fits the container while maintaining the aspect ratio
+      let frameWidth, frameHeight;
+      
+      if (containerWidth / containerHeight > aspectRatio.width / aspectRatio.height) {
+        // Container is wider than the target aspect ratio, so height is the limiting factor
+        frameHeight = containerHeight;
+        frameWidth = frameHeight * (aspectRatio.width / aspectRatio.height);
+      } else {
+        // Container is taller than the target aspect ratio, so width is the limiting factor
+        frameWidth = containerWidth;
+        frameHeight = frameWidth * (aspectRatio.height / aspectRatio.width);
+      }
+      
+      // Update frame dimensions
+      frame.style.width = `${frameWidth}px`;
+      frame.style.height = `${frameHeight}px`;
+      
+      // Update the viewBox on the SVG to match the new aspect ratio
+      svg.setAttribute('viewBox', `0 0 ${aspectRatio.width * 100} ${aspectRatio.height * 100}`);
+      
+      // Regenerate the visualization
+      initVisualization();
+    }
+    
+    // Calculate the hexagon sizing based on the viewport and hexCount
+    function calculateHexagonSizing() {
+      // Get SVG viewport dimensions from viewBox
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      
+      // Calculate the radius so that specified number of hexagons fits the width
+      // Plus 2 for the extra hexagons on each side
+      const hexagonCount = parseInt(hexCountInput.value, 10);
+      const totalHexagons = hexagonCount + 2;
+      
+      // Calculate radius based on the viewport width divided by the total width needed
+      // The width of a hexagon is 2 * radius * sqrt(3)
+      hexRadius = viewportWidth / (totalHexagons * Math.sqrt(3));
+      
+      // Calculate line width scale based on the ratio of current hexRadius to baseHexRadius
+      lineWidthScale = hexRadius / baseHexRadius;
+      
+      // Return calculated hex dimensions
+      return {
+        width: hexRadius * Math.sqrt(3) * 2,
+        height: hexRadius * 2,
+        horizontalSpacing: hexRadius * Math.sqrt(3),
+        verticalSpacing: hexRadius * 1.5
+      };
+    }
+    
+    // Initialize the visualization
+    function initVisualization() {
+      // Clear existing SVG elements
+      while (svg.firstChild) {
+        svg.removeChild(svg.firstChild);
+      }
+      
+      // Reset line arrays
+      blueYLines = [];
+      blueALines = [];
+      blackLines = [];
+      redLines = [];
+      
+      // Set SVG background
+      svg.style.backgroundColor = patternSettings.backgroundColor;
+      
+      // Calculate hexagon dimensions based on hexCount
+      const hexDims = calculateHexagonSizing();
+      
+      // Get SVG viewport dimensions from viewBox
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      
+      // Calculate center of the viewport
+      const centerX = viewportWidth / 2;
+      const centerY = viewportHeight / 2;
+      
+      // Calculate rows and columns needed to fill the viewport plus extra 
+      const hexWidth = hexDims.horizontalSpacing * 2;
+      const hexHeight = hexRadius * 2;
+      
+      // Get the number of hexagons to display
+      const hexagonCount = parseInt(hexCountInput.value, 10);
+      
+      // Calculate how many hexagons needed in each direction from center
+      // If count is even, we'll offset slightly to keep full hexagons visible
+      const isEven = hexagonCount % 2 === 0;
+      const colsEachSide = Math.ceil(hexagonCount / 2) + 1; // +1 for full bleed
+      
+      // Calculate rows needed based on viewport height
+      const rowsEachSide = Math.ceil((viewportHeight / hexDims.verticalSpacing) / 2) + 1;
+      
+      // First create the center hexagon
+      const centerHexagon = createHexagon(centerX, centerY, hexRadius);
+      blueYLines.push(...centerHexagon.blueYLines);
+      blueALines.push(...centerHexagon.blueALines);
+      blackLines.push(...centerHexagon.blackLines);
+      redLines.push(...centerHexagon.redLines);
+      
+      // Create rows of hexagons above and below the center
+      for (let row = 1; row <= rowsEachSide; row++) {
+        // Rows above center (negative y direction in SVG)
+        const rowCenterY1 = centerY - (row * hexDims.verticalSpacing);
+        // Rows below center (positive y direction in SVG)
+        const rowCenterY2 = centerY + (row * hexDims.verticalSpacing);
+        
+        // For each row, create hexagons across the width
+        for (let col = -colsEachSide; col <= colsEachSide; col++) {
+          // Offset for every other row
+          const rowOffset = (row % 2 === 0) ? 0 : hexDims.horizontalSpacing / 2;
+          
+          // Calculate column center position 
+          const colCenterX = centerX + (col * hexDims.horizontalSpacing) + rowOffset;
+          
+          // Create hexagons in rows above and below if they're within viewport bounds
+          if (colCenterX >= -hexWidth && colCenterX <= viewportWidth + hexWidth) {
+            const hex1 = createHexagon(colCenterX, rowCenterY1, hexRadius);
+            const hex2 = createHexagon(colCenterX, rowCenterY2, hexRadius);
+            
+            // Add lines to arrays
+            blueYLines.push(...hex1.blueYLines, ...hex2.blueYLines);
+            blueALines.push(...hex1.blueALines, ...hex2.blueALines);
+            blackLines.push(...hex1.blackLines, ...hex2.blackLines);
+            redLines.push(...hex1.redLines, ...hex2.redLines);
+          }
+        }
+      }
+      
+      // Create hexagons to the left and right of center row
+      for (let col = -colsEachSide; col <= colsEachSide; col++) {
+        if (col !== 0) { // Skip center as we already created it
+          const colCenterX = centerX + (col * hexDims.horizontalSpacing);
+          
+          // Create hexagon if within viewport bounds
+          if (colCenterX >= -hexWidth && colCenterX <= viewportWidth + hexWidth) {
+            const hex = createHexagon(colCenterX, centerY, hexRadius);
+            
+            // Add lines to arrays
+            blueYLines.push(...hex.blueYLines);
+            blueALines.push(...hex.blueALines);
+            blackLines.push(...hex.blackLines);
+            redLines.push(...hex.redLines);
+          }
+        }
+      }
+      
+      // Apply pattern settings to lines
+      updatePatternSettings();
+    }
+    
+    // Apply pattern settings to lines
+    function updatePatternSettings() {
+      // Update Y lines
+      blueYLines.forEach(line => {
+        // Apply line length
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (patternSettings.blueYLength / 100);
+        const gapSize = (totalLength - visibleLength) / 2; // Divide by 2 to apply from both sides
+        
+        if (patternSettings.blueYLength > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          // For 0% case, make line invisible
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+        
+        line.element.setAttribute('stroke-opacity', patternSettings.blueYVisible ? '1' : '0');
+      });
+      
+      // Update A lines
+      blueALines.forEach(line => {
+        // Apply line length
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (patternSettings.blueALength / 100);
+        const gapSize = (totalLength - visibleLength) / 2;
+        
+        if (patternSettings.blueALength > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          // For 0% case, make line invisible
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+        
+        line.element.setAttribute('stroke-opacity', patternSettings.blueAVisible ? '1' : '0');
+      });
+      
+      // Update Black lines
+      blackLines.forEach(line => {
+        // Apply line length
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (patternSettings.blackLength / 100);
+        const gapSize = (totalLength - visibleLength) / 2;
+        
+        if (patternSettings.blackLength > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          // For 0% case, make line invisible
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+        
+        line.element.setAttribute('stroke-opacity', patternSettings.blackVisible ? '1' : '0');
+      });
+      
+      // Update Red lines
+      redLines.forEach(line => {
+        // Apply line length
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (patternSettings.redLength / 100);
+        const gapSize = (totalLength - visibleLength) / 2;
+        
+        if (patternSettings.redLength > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          // For 0% case, make line invisible
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+        
+        line.element.setAttribute('stroke-opacity', patternSettings.redVisible ? '1' : '0');
+      });
+    }
+    
+    // Parse a ratio string like "16:9" to an object {width: 16, height: 9}
+    function parseRatio(ratioStr) {
+      const parts = ratioStr.split(':');
+      return {
+        width: parseInt(parts[0], 10),
+        height: parseInt(parts[1], 10)
+      };
+    }
+    
+    // Draw sphere outline
+    function drawSphereOutline() {
+      // Remove existing sphere outline if any
+      const existingOutline = svg.querySelector('.sphere-outline');
+      if (existingOutline) {
+        existingOutline.remove();
+      }
+      
+      if (!globeActive || !sphereOutlineVisible) return;
+      
+      // Get SVG viewport dimensions from viewBox
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      
+      // Calculate center of the viewport
+      const centerX = viewportWidth / 2;
+      const centerY = viewportHeight / 2;
+      
+      // Calculate sphere radius based on the smaller dimension and the diameter setting
+      const minDimension = Math.min(viewportWidth, viewportHeight);
+      const sphereRadius = (minDimension / 2) * (sphereDiameter / 100);
+      
+      // Create circle element for the sphere outline
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', centerX);
+      circle.setAttribute('cy', centerY);
+      circle.setAttribute('r', sphereRadius);
+      circle.setAttribute('class', 'sphere-outline');
+      svg.appendChild(circle);
+    }
+    
+    // Apply globe wrapping to all lines
+    function applyGlobeWrapping() {
+      // If not active, reset to original pattern
+      if (!globeActive) {
+        updatePatternSettings();
+        // Remove any sphere outline
+        const existingOutline = svg.querySelector('.sphere-outline');
+        if (existingOutline) {
+          existingOutline.remove();
+        }
+        return;
+      }
+      
+      // Get viewport dimensions and center
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      const centerX = viewportWidth / 2;
+      const centerY = viewportHeight / 2;
+      
+      // Calculate sphere radius based on the smaller dimension and the diameter setting
+      const minDimension = Math.min(viewportWidth, viewportHeight);
+      const sphereRadius = (minDimension / 2) * (sphereDiameter / 100);
+      
+      // If wrap intensity is 0, just reset to original pattern but keep outline
+      if (wrapIntensity === 0) {
+        updatePatternSettings();
+        drawSphereOutline();
+        return;
+      }
+      
+      // Combine all lines into one array for processing
+      const allLines = [...blueYLines, ...blueALines, ...blackLines, ...redLines];
+      
+      // Helper function to project a 2D point onto a 3D sphere and back to 2D
+      function projectOntoSphere(point) {
+        // Calculate distance from center
+        const dx = point.x - centerX;
+        const dy = point.y - centerY;
+        const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+        
+        // Normalize coordinates relative to sphere radius
+        const nx = dx / sphereRadius;
+        const ny = dy / sphereRadius;
+        
+        // Normalized distance from center (0-1 inside sphere, >1 outside)
+        const normalizedDistance = distanceFromCenter / sphereRadius;
+        
+        // Calculate the wrapping factor based on intensity
+        // At 100% intensity, even points far outside the sphere will wrap around
+        const wrapFactor = wrapIntensity / 100;
+        
+        // Calculate z-coordinate based on position and wrap factor
+        let nz;
+        let scale;
+        
+        // Determine if the point should be visible or hidden (wrapping to back of sphere)
+        let hidden = false;
+        
+        if (normalizedDistance <= 1) {
+          // Inside sphere: bulge toward viewer (positive z)
+          nz = Math.sqrt(1 - nx * nx - ny * ny) * wrapFactor;
+          
+          // For points inside sphere, higher z makes them appear larger (closer to viewer)
+          scale = 1 / (1 - nz * 0.5);
+        } else {
+          // Outside sphere: calculate how much to wrap around based on distance and intensity
+          
+          // At 100% intensity, points should wrap completely around the sphere
+          // At lower intensities, create a transition zone
+          const transitionRange = 1 + (1 * wrapFactor); // Range within which points transition
+          
+          if (normalizedDistance <= transitionRange) {
+            // Points in transition zone: gradually bend around the sphere
+            const t = (normalizedDistance - 1) / (transitionRange - 1); // 0 at sphere edge, 1 at transition boundary
+            nz = ((1 - t) * wrapFactor) - (t * wrapFactor); // Smoothly transition from positive to negative z
+            
+            // Scale based on z position
+            scale = 1 / (1 - nz * 0.5);
+          } else if (wrapFactor > 0.5) { 
+            // At high wrap intensities, points beyond transition zone wrap to back of sphere
+            const backWrapFactor = (wrapFactor - 0.5) * 2; // 0 at 50% intensity, 1 at 100% intensity
+            const distanceFactor = Math.min(1, 3 / normalizedDistance); // How much influence based on distance
+            
+            // Calculate z and determine if point should be hidden
+            nz = -backWrapFactor * distanceFactor;
+            scale = 1 / (1 - nz * 0.3);
+            
+            // Hide points that wrap too far around to back
+            if (nz < -0.6 * wrapFactor) {
+              hidden = true;
+            }
+          } else {
+            // At low wrap intensities, points beyond transition zone remain in place
+            nz = 0;
+            scale = 1;
+          }
+        }
+        
+        // Return center point if hidden, otherwise return projected point
+        if (hidden) {
+          return {
+            x: centerX,
+            y: centerY,
+            hidden: true
+          };
+        }
+        
+        return {
+          x: centerX + dx * scale,
+          y: centerY + dy * scale,
+          hidden: false
+        };
+      }
+      
+      // Apply the projection to all lines
+      allLines.forEach(line => {
+        // Get original endpoints from the line object
+        const originalStart = line.start;
+        const originalEnd = line.end;
+        
+        // Apply length adjustments by getting the current actual endpoints
+        const totalLength = distance(originalStart, originalEnd);
+        let visibleLength;
+        let gapSize;
+        
+        // Determine which type of line this is to get the correct length setting
+        if (blueYLines.includes(line)) {
+          visibleLength = totalLength * (patternSettings.blueYLength / 100);
+          gapSize = (totalLength - visibleLength) / 2;
+        } else if (blueALines.includes(line)) {
+          visibleLength = totalLength * (patternSettings.blueALength / 100);
+          gapSize = (totalLength - visibleLength) / 2;
+        } else if (blackLines.includes(line)) {
+          visibleLength = totalLength * (patternSettings.blackLength / 100);
+          gapSize = (totalLength - visibleLength) / 2;
+        } else { // Red lines
+          visibleLength = totalLength * (patternSettings.redLength / 100);
+          gapSize = (totalLength - visibleLength) / 2;
+        }
+        
+        if (visibleLength > 0) {
+          const startPoint = pointAtDistance(originalStart, originalEnd, gapSize);
+          const endPoint = pointAtDistance(originalEnd, originalStart, gapSize);
+          
+          // Project the visible segment endpoints
+          const projectedVisibleStart = projectOntoSphere(startPoint);
+          const projectedVisibleEnd = projectOntoSphere(endPoint);
+          
+          // If either point is hidden, hide the entire line
+          if (projectedVisibleStart.hidden || projectedVisibleEnd.hidden) {
+            line.element.setAttribute('stroke-opacity', '0');
+          } else {
+            // Set the line attributes
+            line.element.setAttribute('x1', projectedVisibleStart.x);
+            line.element.setAttribute('y1', projectedVisibleStart.y);
+            line.element.setAttribute('x2', projectedVisibleEnd.x);
+            line.element.setAttribute('y2', projectedVisibleEnd.y);
+            
+            // Make sure the line is visible (it might have been hidden previously)
+            if ((blueYLines.includes(line) && patternSettings.blueYVisible) ||
+                (blueALines.includes(line) && patternSettings.blueAVisible) ||
+                (blackLines.includes(line) && patternSettings.blackVisible) ||
+                (redLines.includes(line) && patternSettings.redVisible)) {
+              line.element.setAttribute('stroke-opacity', '1');
+            }
+          }
+        } else {
+          // For 0% length case, make the line a single point
+          const centerX = (originalStart.x + originalEnd.x) / 2;
+          const centerY = (originalStart.y + originalEnd.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+      });
+      
+      // Finally, draw the sphere outline
+      drawSphereOutline();
+    }
+    
+    // Draw clean sphere outline
+    function drawCleanSphereOutline() {
+      // Remove existing sphere outline if any
+      const existingOutline = svg.querySelector('.sphere-outline');
+      if (existingOutline) {
+        existingOutline.remove();
+      }
+      
+      if (!globeCleanActive || !cleanSphereOutlineVisible) return;
+      
+      // Get SVG viewport dimensions from viewBox
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      
+      // Calculate center of the viewport
+      const centerX = viewportWidth / 2;
+      const centerY = viewportHeight / 2;
+      
+      // Calculate sphere radius based on the smaller dimension and the diameter setting
+      const minDimension = Math.min(viewportWidth, viewportHeight);
+      const sphereRadius = (minDimension / 2) * (cleanSphereDiameter / 100);
+      
+      // Create circle element for the sphere outline
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', centerX);
+      circle.setAttribute('cy', centerY);
+      circle.setAttribute('r', sphereRadius);
+      circle.setAttribute('class', 'sphere-outline');
+      svg.appendChild(circle);
+    }
+    
+    // Apply globe clean wrapping to all lines
+    function applyGlobeCleanWrapping() {
+      // If not active, reset to original pattern
+      if (!globeCleanActive) {
+        updatePatternSettings();
+        // Remove any sphere outline
+        const existingOutline = svg.querySelector('.sphere-outline');
+        if (existingOutline) {
+          existingOutline.remove();
+        }
+        return;
+      }
+      
+      // Get viewport dimensions and center
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      const centerX = viewportWidth / 2;
+      const centerY = viewportHeight / 2;
+      
+      // Calculate sphere radius based on the smaller dimension and the diameter setting
+      const minDimension = Math.min(viewportWidth, viewportHeight);
+      const sphereRadius = (minDimension / 2) * (cleanSphereDiameter / 100);
+      
+      // If wrap intensity is 0, just show the flat grid within sphere boundary
+      if (cleanWrapIntensity === 0) {
+        // First apply standard pattern settings to get original line positions
+        updatePatternSettings();
+        
+        // Combine all lines into one array for processing
+        const allLines = [...blueYLines, ...blueALines, ...blackLines, ...redLines];
+        
+        // For each line, determine if it's inside the sphere, outside, or crossing the boundary
+        allLines.forEach(line => {
+          // Get line endpoints after normal pattern settings are applied
+          const currentX1 = parseFloat(line.element.getAttribute('x1'));
+          const currentY1 = parseFloat(line.element.getAttribute('y1'));
+          const currentX2 = parseFloat(line.element.getAttribute('x2'));
+          const currentY2 = parseFloat(line.element.getAttribute('y2'));
+          
+          const point1 = { x: currentX1, y: currentY1 };
+          const point2 = { x: currentX2, y: currentY2 };
+          
+          // Calculate distances from center
+          const distance1 = Math.sqrt(
+            Math.pow(point1.x - centerX, 2) + 
+            Math.pow(point1.y - centerY, 2)
+          );
+          
+          const distance2 = Math.sqrt(
+            Math.pow(point2.x - centerX, 2) + 
+            Math.pow(point2.y - centerY, 2)
+          );
+          
+          // If both points are inside, show the line as is
+          if (distance1 <= sphereRadius && distance2 <= sphereRadius) {
+            // Make sure visibility is based on pattern settings
+            if ((blueYLines.includes(line) && patternSettings.blueYVisible) ||
+                (blueALines.includes(line) && patternSettings.blueAVisible) ||
+                (blackLines.includes(line) && patternSettings.blackVisible) ||
+                (redLines.includes(line) && patternSettings.redVisible)) {
+              line.element.setAttribute('stroke-opacity', '1');
+            }
+          }
+          // If both points are outside, hide the line
+          else if (distance1 > sphereRadius && distance2 > sphereRadius) {
+            line.element.setAttribute('stroke-opacity', '0');
+          }
+          // If one point is inside and one is outside, clip the line at the boundary
+          else {
+            // Determine which point is inside and which is outside
+            const insidePoint = distance1 <= sphereRadius ? point1 : point2;
+            const outsidePoint = distance1 <= sphereRadius ? point2 : point1;
+            
+            // Find the intersection point with the sphere
+            // Vector from inside to outside
+            const dx = outsidePoint.x - insidePoint.x;
+            const dy = outsidePoint.y - insidePoint.y;
+            
+            // Vector from center to inside point
+            const cx = insidePoint.x - centerX;
+            const cy = insidePoint.y - centerY;
+            
+            // Solve quadratic equation: at² + 2bt + c = 0
+            const a = dx * dx + dy * dy;
+            const b = cx * dx + cy * dy;
+            const c = cx * cx + cy * cy - sphereRadius * sphereRadius;
+            
+            const discriminant = b * b - a * c;
+            if (discriminant >= 0) {
+              // Find the intersection parameter (smaller value is the entry point)
+              const t = (-b + Math.sqrt(discriminant)) / a;
+              
+              // Ensure t is between 0 and 1 (intersection is on the line segment)
+              if (t >= 0 && t <= 1) {
+                // Intersection point
+                const intersectionX = insidePoint.x + t * dx;
+                const intersectionY = insidePoint.y + t * dy;
+                
+                // Update line endpoints to clip at sphere boundary
+                if (distance1 <= sphereRadius) {
+                  line.element.setAttribute('x1', insidePoint.x);
+                  line.element.setAttribute('y1', insidePoint.y);
+                  line.element.setAttribute('x2', intersectionX);
+                  line.element.setAttribute('y2', intersectionY);
+                } else {
+                  line.element.setAttribute('x1', intersectionX);
+                  line.element.setAttribute('y1', intersectionY);
+                  line.element.setAttribute('x2', insidePoint.x);
+                  line.element.setAttribute('y2', insidePoint.y);
+                }
+                
+                // Make sure the line is visible
+                if ((blueYLines.includes(line) && patternSettings.blueYVisible) ||
+                    (blueALines.includes(line) && patternSettings.blueAVisible) ||
+                    (blackLines.includes(line) && patternSettings.blackVisible) ||
+                    (redLines.includes(line) && patternSettings.redVisible)) {
+                  line.element.setAttribute('stroke-opacity', '1');
+                }
+              } else {
+                // Intersection is outside the line segment
+                line.element.setAttribute('stroke-opacity', '0');
+              }
+            } else {
+              // No intersection (shouldn't happen with a proper calculation)
+              line.element.setAttribute('stroke-opacity', '0');
+            }
+          }
+        });
+        
+        // Draw the sphere outline
+        drawCleanSphereOutline();
+        return;
+      }
+      
+      // Combine all lines into one array for processing
+      const allLines = [...blueYLines, ...blueALines, ...blackLines, ...redLines];
+      
+      // Helper function to project a 2D point onto a 3D sphere and back to 2D
+      function projectOntoSphere(point) {
+        // Calculate distance from center
+        const dx = point.x - centerX;
+        const dy = point.y - centerY;
+        const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+        
+        // Normalized distance from center (0-1 inside sphere, >1 outside)
+        const normalizedDistance = distanceFromCenter / sphereRadius;
+        
+        // If point is outside the sphere, it should be hidden
+        if (normalizedDistance > 1) {
+          return {
+            x: centerX,
+            y: centerY,
+            hidden: true
+          };
+        }
+        
+        // Normalize coordinates relative to sphere radius
+        const nx = dx / sphereRadius;
+        const ny = dy / sphereRadius;
+        
+        // Calculate the wrapping factor based on intensity
+        const wrapFactor = cleanWrapIntensity / 100;
+        
+        // Calculate the "frontalness" of the point on the sphere
+        // At the center of the visible hemisphere, this value is 1
+        // At the horizon (edge of visible hemisphere), this value approaches 0
+        // This helps us determine if a point is on the front or back of the sphere
+        const frontalness = 1 - (nx * nx + ny * ny);
+        
+        // If wrap intensity is 100%, we need to check if the point is on the back side of the sphere
+        if (wrapFactor >= 0.8) {
+          // As we approach full wrap (100%), gradually hide points beyond the horizon
+          // For points near the horizon or slightly beyond, this creates a clean edge
+          // without abrupt cutoffs in the pattern
+          const visibilityThreshold = 0.01 * (wrapFactor <= 0.9 ? 1 : 0);
+          
+          if (frontalness < visibilityThreshold) {
+            return {
+              x: centerX,
+              y: centerY,
+              hidden: true
+            };
+          }
+        }
+        
+        // Inside sphere: bulge toward viewer (positive z)
+        // The multiplication by frontalness ensures the bulge is strongest at the center
+        // and gradually reduces toward the edges of the sphere
+        const nz = Math.sqrt(frontalness) * wrapFactor;
+        
+        // For points inside sphere, higher z makes them appear larger (closer to viewer)
+        const scale = 1 / (1 - nz * 0.5);
+        
+        return {
+          x: centerX + dx * scale,
+          y: centerY + dy * scale,
+          hidden: false
+        };
+      }
+      
+      // Apply the projection to all lines
+      allLines.forEach(line => {
+        // Get original endpoints from the line object
+        const originalStart = line.start;
+        const originalEnd = line.end;
+        
+        // Apply length adjustments by getting the current actual endpoints
+        const totalLength = distance(originalStart, originalEnd);
+        let visibleLength;
+        let gapSize;
+        
+        // Determine which type of line this is to get the correct length setting
+        if (blueYLines.includes(line)) {
+          visibleLength = totalLength * (patternSettings.blueYLength / 100);
+          gapSize = (totalLength - visibleLength) / 2;
+        } else if (blueALines.includes(line)) {
+          visibleLength = totalLength * (patternSettings.blueALength / 100);
+          gapSize = (totalLength - visibleLength) / 2;
+        } else if (blackLines.includes(line)) {
+          visibleLength = totalLength * (patternSettings.blackLength / 100);
+          gapSize = (totalLength - visibleLength) / 2;
+        } else { // Red lines
+          visibleLength = totalLength * (patternSettings.redLength / 100);
+          gapSize = (totalLength - visibleLength) / 2;
+        }
+        
+        if (visibleLength > 0) {
+          const startPoint = pointAtDistance(originalStart, originalEnd, gapSize);
+          const endPoint = pointAtDistance(originalEnd, originalStart, gapSize);
+          
+          // Project the visible segment endpoints
+          const projectedVisibleStart = projectOntoSphere(startPoint);
+          const projectedVisibleEnd = projectOntoSphere(endPoint);
+          
+          // If either point is hidden or the line crosses the sphere boundary, hide the line
+          if (projectedVisibleStart.hidden || projectedVisibleEnd.hidden) {
+            line.element.setAttribute('stroke-opacity', '0');
+          } else {
+            // Set the line attributes
+            line.element.setAttribute('x1', projectedVisibleStart.x);
+            line.element.setAttribute('y1', projectedVisibleStart.y);
+            line.element.setAttribute('x2', projectedVisibleEnd.x);
+            line.element.setAttribute('y2', projectedVisibleEnd.y);
+            
+            // Make sure the line is visible (it might have been hidden previously)
+            if ((blueYLines.includes(line) && patternSettings.blueYVisible) ||
+                (blueALines.includes(line) && patternSettings.blueAVisible) ||
+                (blackLines.includes(line) && patternSettings.blackVisible) ||
+                (redLines.includes(line) && patternSettings.redVisible)) {
+              line.element.setAttribute('stroke-opacity', '1');
+            }
+          }
+        } else {
+          // For 0% length case, make the line a single point
+          const centerX = (originalStart.x + originalEnd.x) / 2;
+          const centerY = (originalStart.y + originalEnd.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+      });
+      
+      // Draw the sphere outline
+      drawCleanSphereOutline();
+    }
+    
+    // Event listeners
+    window.addEventListener('DOMContentLoaded', () => {
+      // Load pattern settings from localStorage
+      if (loadPatternSettings()) {
+        console.log('Pattern settings loaded:', patternSettings);
+      }
+      
+      // Get references to globe control elements
+      const globeButton = document.getElementById('globeButton');
+      const globeControls = document.getElementById('globeControls');
+      const sphereOutlineToggle = document.getElementById('sphereOutlineToggle');
+      const sphereDiameterSlider = document.getElementById('sphereDiameter');
+      const sphereDiameterValue = document.getElementById('sphereDiameterValue');
+      const wrapIntensitySlider = document.getElementById('wrapIntensity');
+      const wrapIntensityValue = document.getElementById('wrapIntensityValue');
+      
+      // Get references to globe clean control elements
+      const globeCleanButton = document.getElementById('globeCleanButton');
+      const globeCleanControls = document.getElementById('globeCleanControls');
+      const cleanSphereOutlineToggle = document.getElementById('cleanSphereOutlineToggle');
+      const cleanSphereDiameterSlider = document.getElementById('cleanSphereDiameter');
+      const cleanSphereDiameterValue = document.getElementById('cleanSphereDiameterValue');
+      const cleanWrapIntensitySlider = document.getElementById('cleanWrapIntensity');
+      const cleanWrapIntensityValue = document.getElementById('cleanWrapIntensityValue');
+      
+      // Globe button click handler
+      globeButton.addEventListener('click', function() {
+        // Toggle globe active state
+        globeActive = !globeActive;
+        
+        // Toggle button styling to show active state
+        if (globeActive) {
+          globeButton.style.backgroundColor = '#0BC5BA';
+          globeControls.style.display = 'block';
+        } else {
+          globeButton.style.backgroundColor = '';
+          globeControls.style.display = 'none';
+        }
+        
+        // Apply the globe wrapping effect or reset
+        applyGlobeWrapping();
+      });
+      
+      // Sphere outline toggle handler
+      sphereOutlineToggle.addEventListener('change', function() {
+        sphereOutlineVisible = this.checked;
+        drawSphereOutline();
+      });
+      
+      // Sphere diameter slider handler
+      sphereDiameterSlider.addEventListener('input', function() {
+        sphereDiameter = parseInt(this.value, 10);
+        sphereDiameterValue.textContent = sphereDiameter;
+        applyGlobeWrapping();
+      });
+      
+      // Wrap intensity slider handler
+      wrapIntensitySlider.addEventListener('input', function() {
+        wrapIntensity = parseInt(this.value, 10);
+        wrapIntensityValue.textContent = wrapIntensity;
+        applyGlobeWrapping();
+        
+        // Update patternSettings to preserve any effects of manipulation
+        // We keep the same pattern properties (line lengths, colors, etc.)
+        // but the pattern will be preserved when returning to the pattern maker
+      });
+      
+      // Globe Clean button click handler
+      globeCleanButton.addEventListener('click', function() {
+        // Toggle globe clean active state
+        globeCleanActive = !globeCleanActive;
+        
+        // If activating Globe Clean, deactivate regular Globe
+        if (globeCleanActive && globeActive) {
+          globeActive = false;
+          globeButton.style.backgroundColor = '';
+          globeControls.style.display = 'none';
+        }
+        
+        // Toggle button styling to show active state
+        if (globeCleanActive) {
+          globeCleanButton.style.backgroundColor = '#0BC5BA';
+          globeCleanControls.style.display = 'block';
+        } else {
+          globeCleanButton.style.backgroundColor = '';
+          globeCleanControls.style.display = 'none';
+        }
+        
+        // Apply the globe clean wrapping effect or reset
+        applyGlobeCleanWrapping();
+      });
+      
+      // Clean Sphere outline toggle handler
+      cleanSphereOutlineToggle.addEventListener('change', function() {
+        cleanSphereOutlineVisible = this.checked;
+        drawCleanSphereOutline();
+      });
+      
+      // Clean Sphere diameter slider handler
+      cleanSphereDiameterSlider.addEventListener('input', function() {
+        cleanSphereDiameter = parseInt(this.value, 10);
+        cleanSphereDiameterValue.textContent = cleanSphereDiameter;
+        applyGlobeCleanWrapping();
+      });
+      
+      // Clean Wrap intensity slider handler
+      cleanWrapIntensitySlider.addEventListener('input', function() {
+        cleanWrapIntensity = parseInt(this.value, 10);
+        cleanWrapIntensityValue.textContent = cleanWrapIntensity;
+        applyGlobeCleanWrapping();
+      });
+      
+      // Add deactivation of Globe Clean when regular Globe is activated
+      globeButton.addEventListener('click', function() {
+        if (globeActive && globeCleanActive) {
+          globeCleanActive = false;
+          globeCleanButton.style.backgroundColor = '';
+          globeCleanControls.style.display = 'none';
+        }
+      });
+      
+      // Set up pattern size event listeners
+      hexCountInput.addEventListener('change', function() {
+        const value = parseInt(this.value, 10);
+        // Ensure value is within allowed range
+        if (value < 1) {
+          this.value = 1;
+        } else if (value > 100) {
+          this.value = 100;
+        }
+        // Update visualization
+        initVisualization();
+        // Reapply globe wrapping if active
+        if (globeActive) {
+          applyGlobeWrapping();
+        } else if (globeCleanActive) {
+          applyGlobeCleanWrapping();
+        }
+      });
+      
+      ratioSelect.addEventListener('change', function() {
+        aspectRatio = parseRatio(this.value);
+        updateVisualizationFrame();
+        // Reapply globe wrapping if active
+        if (globeActive) {
+          applyGlobeWrapping();
+        } else if (globeCleanActive) {
+          applyGlobeCleanWrapping();
+        }
+      });
+      
+      backButton.addEventListener('click', function() {
+        // Save the current pattern settings before navigating back
+        // This ensures the pattern is maintained when returning to pattern maker
+        localStorage.setItem('hexagonPattern', JSON.stringify(patternSettings));
+        
+        // Navigate back to the pattern maker page
+        window.location.href = 'index.html';
+      });
+      
+      // Set initial aspect ratio to 1:1
+      aspectRatio = parseRatio(ratioSelect.value);
+      
+      // Initial setup of the visualization frame and grid
+      updateVisualizationFrame();
+      
+      // Handle window resize
+      window.addEventListener('resize', function() {
+        updateVisualizationFrame();
+        // Reapply appropriate wrapping if active
+        if (globeActive) {
+          applyGlobeWrapping();
+        } else if (globeCleanActive) {
+          applyGlobeCleanWrapping();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
