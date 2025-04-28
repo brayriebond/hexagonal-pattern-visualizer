@@ -229,32 +229,10 @@
       <div class="manipulator-container">
         <div class="manipulator-section">
           <div class="control-item">
-            <button class="button" id="globeButton">Globe</button>
-          </div>
-          <div class="control-item">
             <button class="button" id="globeCleanButton">Globe Clean</button>
           </div>
         </div>
         
-        <div id="globeControls" class="manipulator-controls">
-          <h4>Globe Settings</h4>
-          <div class="manipulator-control-item toggle-container">
-            <label for="sphereOutlineToggle">Sphere Outline:</label>
-            <input type="checkbox" id="sphereOutlineToggle" checked>
-          </div>
-          <div class="manipulator-control-item">
-            <label for="sphereDiameter">Sphere Diameter: <span id="sphereDiameterValue">100</span>%</label>
-            <div class="slider-container">
-              <input type="range" id="sphereDiameter" min="10" max="300" value="100">
-            </div>
-          </div>
-          <div class="manipulator-control-item">
-            <label for="wrapIntensity">Wrap Intensity: <span id="wrapIntensityValue">0</span>%</label>
-            <div class="slider-container">
-              <input type="range" id="wrapIntensity" min="0" max="100" value="0">
-            </div>
-          </div>
-        </div>
         
         <div id="globeCleanControls" class="manipulator-controls">
           <h4>Globe Clean Settings</h4>
@@ -296,12 +274,6 @@
     
     // Line width scaling
     let lineWidthScale = 1; // Will adjust to maintain consistent line width ratios
-    
-    // Globe manipulator configuration
-    let globeActive = false;
-    let sphereOutlineVisible = true;
-    let sphereDiameter = 100; // percentage of viewport
-    let wrapIntensity = 0; // percentage of wrapping
     
     // Globe Clean manipulator configuration
     let globeCleanActive = false;
@@ -773,219 +745,6 @@
       };
     }
     
-    // Draw sphere outline
-    function drawSphereOutline() {
-      // Remove existing sphere outline if any
-      const existingOutline = svg.querySelector('.sphere-outline');
-      if (existingOutline) {
-        existingOutline.remove();
-      }
-      
-      if (!globeActive || !sphereOutlineVisible) return;
-      
-      // Get SVG viewport dimensions from viewBox
-      const viewBox = svg.viewBox.baseVal;
-      const viewportWidth = viewBox.width;
-      const viewportHeight = viewBox.height;
-      
-      // Calculate center of the viewport
-      const centerX = viewportWidth / 2;
-      const centerY = viewportHeight / 2;
-      
-      // Calculate sphere radius based on the smaller dimension and the diameter setting
-      const minDimension = Math.min(viewportWidth, viewportHeight);
-      const sphereRadius = (minDimension / 2) * (sphereDiameter / 100);
-      
-      // Create circle element for the sphere outline
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', centerX);
-      circle.setAttribute('cy', centerY);
-      circle.setAttribute('r', sphereRadius);
-      circle.setAttribute('class', 'sphere-outline');
-      svg.appendChild(circle);
-    }
-    
-    // Apply globe wrapping to all lines
-    function applyGlobeWrapping() {
-      // If not active, reset to original pattern
-      if (!globeActive) {
-        updatePatternSettings();
-        // Remove any sphere outline
-        const existingOutline = svg.querySelector('.sphere-outline');
-        if (existingOutline) {
-          existingOutline.remove();
-        }
-        return;
-      }
-      
-      // Get viewport dimensions and center
-      const viewBox = svg.viewBox.baseVal;
-      const viewportWidth = viewBox.width;
-      const viewportHeight = viewBox.height;
-      const centerX = viewportWidth / 2;
-      const centerY = viewportHeight / 2;
-      
-      // Calculate sphere radius based on the smaller dimension and the diameter setting
-      const minDimension = Math.min(viewportWidth, viewportHeight);
-      const sphereRadius = (minDimension / 2) * (sphereDiameter / 100);
-      
-      // If wrap intensity is 0, just reset to original pattern but keep outline
-      if (wrapIntensity === 0) {
-        updatePatternSettings();
-        drawSphereOutline();
-        return;
-      }
-      
-      // Combine all lines into one array for processing
-      const allLines = [...blueYLines, ...blueALines, ...blackLines, ...redLines];
-      
-      // Helper function to project a 2D point onto a 3D sphere and back to 2D
-      function projectOntoSphere(point) {
-        // Calculate distance from center
-        const dx = point.x - centerX;
-        const dy = point.y - centerY;
-        const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
-        
-        // Normalize coordinates relative to sphere radius
-        const nx = dx / sphereRadius;
-        const ny = dy / sphereRadius;
-        
-        // Normalized distance from center (0-1 inside sphere, >1 outside)
-        const normalizedDistance = distanceFromCenter / sphereRadius;
-        
-        // Calculate the wrapping factor based on intensity
-        // At 100% intensity, even points far outside the sphere will wrap around
-        const wrapFactor = wrapIntensity / 100;
-        
-        // Calculate z-coordinate based on position and wrap factor
-        let nz;
-        let scale;
-        
-        // Determine if the point should be visible or hidden (wrapping to back of sphere)
-        let hidden = false;
-        
-        if (normalizedDistance <= 1) {
-          // Inside sphere: bulge toward viewer (positive z)
-          nz = Math.sqrt(1 - nx * nx - ny * ny) * wrapFactor;
-          
-          // For points inside sphere, higher z makes them appear larger (closer to viewer)
-          scale = 1 / (1 - nz * 0.5);
-        } else {
-          // Outside sphere: calculate how much to wrap around based on distance and intensity
-          
-          // At 100% intensity, points should wrap completely around the sphere
-          // At lower intensities, create a transition zone
-          const transitionRange = 1 + (1 * wrapFactor); // Range within which points transition
-          
-          if (normalizedDistance <= transitionRange) {
-            // Points in transition zone: gradually bend around the sphere
-            const t = (normalizedDistance - 1) / (transitionRange - 1); // 0 at sphere edge, 1 at transition boundary
-            nz = ((1 - t) * wrapFactor) - (t * wrapFactor); // Smoothly transition from positive to negative z
-            
-            // Scale based on z position
-            scale = 1 / (1 - nz * 0.5);
-          } else if (wrapFactor > 0.5) { 
-            // At high wrap intensities, points beyond transition zone wrap to back of sphere
-            const backWrapFactor = (wrapFactor - 0.5) * 2; // 0 at 50% intensity, 1 at 100% intensity
-            const distanceFactor = Math.min(1, 3 / normalizedDistance); // How much influence based on distance
-            
-            // Calculate z and determine if point should be hidden
-            nz = -backWrapFactor * distanceFactor;
-            scale = 1 / (1 - nz * 0.3);
-            
-            // Hide points that wrap too far around to back
-            if (nz < -0.6 * wrapFactor) {
-              hidden = true;
-            }
-          } else {
-            // At low wrap intensities, points beyond transition zone remain in place
-            nz = 0;
-            scale = 1;
-          }
-        }
-        
-        // Return center point if hidden, otherwise return projected point
-        if (hidden) {
-          return {
-            x: centerX,
-            y: centerY,
-            hidden: true
-          };
-        }
-        
-        return {
-          x: centerX + dx * scale,
-          y: centerY + dy * scale,
-          hidden: false
-        };
-      }
-      
-      // Apply the projection to all lines
-      allLines.forEach(line => {
-        // Get original endpoints from the line object
-        const originalStart = line.start;
-        const originalEnd = line.end;
-        
-        // Apply length adjustments by getting the current actual endpoints
-        const totalLength = distance(originalStart, originalEnd);
-        let visibleLength;
-        let gapSize;
-        
-        // Determine which type of line this is to get the correct length setting
-        if (blueYLines.includes(line)) {
-          visibleLength = totalLength * (patternSettings.blueYLength / 100);
-          gapSize = (totalLength - visibleLength) / 2;
-        } else if (blueALines.includes(line)) {
-          visibleLength = totalLength * (patternSettings.blueALength / 100);
-          gapSize = (totalLength - visibleLength) / 2;
-        } else if (blackLines.includes(line)) {
-          visibleLength = totalLength * (patternSettings.blackLength / 100);
-          gapSize = (totalLength - visibleLength) / 2;
-        } else { // Red lines
-          visibleLength = totalLength * (patternSettings.redLength / 100);
-          gapSize = (totalLength - visibleLength) / 2;
-        }
-        
-        if (visibleLength > 0) {
-          const startPoint = pointAtDistance(originalStart, originalEnd, gapSize);
-          const endPoint = pointAtDistance(originalEnd, originalStart, gapSize);
-          
-          // Project the visible segment endpoints
-          const projectedVisibleStart = projectOntoSphere(startPoint);
-          const projectedVisibleEnd = projectOntoSphere(endPoint);
-          
-          // If either point is hidden, hide the entire line
-          if (projectedVisibleStart.hidden || projectedVisibleEnd.hidden) {
-            line.element.setAttribute('stroke-opacity', '0');
-          } else {
-            // Set the line attributes
-            line.element.setAttribute('x1', projectedVisibleStart.x);
-            line.element.setAttribute('y1', projectedVisibleStart.y);
-            line.element.setAttribute('x2', projectedVisibleEnd.x);
-            line.element.setAttribute('y2', projectedVisibleEnd.y);
-            
-            // Make sure the line is visible (it might have been hidden previously)
-            if ((blueYLines.includes(line) && patternSettings.blueYVisible) ||
-                (blueALines.includes(line) && patternSettings.blueAVisible) ||
-                (blackLines.includes(line) && patternSettings.blackVisible) ||
-                (redLines.includes(line) && patternSettings.redVisible)) {
-              line.element.setAttribute('stroke-opacity', '1');
-            }
-          }
-        } else {
-          // For 0% length case, make the line a single point
-          const centerX = (originalStart.x + originalEnd.x) / 2;
-          const centerY = (originalStart.y + originalEnd.y) / 2;
-          line.element.setAttribute('x1', centerX);
-          line.element.setAttribute('y1', centerY);
-          line.element.setAttribute('x2', centerX);
-          line.element.setAttribute('y2', centerY);
-        }
-      });
-      
-      // Finally, draw the sphere outline
-      drawSphereOutline();
-    }
     
     // Draw clean sphere outline
     function drawCleanSphereOutline() {
@@ -1294,14 +1053,7 @@
         console.log('Pattern settings loaded:', patternSettings);
       }
       
-      // Get references to globe control elements
-      const globeButton = document.getElementById('globeButton');
-      const globeControls = document.getElementById('globeControls');
-      const sphereOutlineToggle = document.getElementById('sphereOutlineToggle');
-      const sphereDiameterSlider = document.getElementById('sphereDiameter');
-      const sphereDiameterValue = document.getElementById('sphereDiameterValue');
-      const wrapIntensitySlider = document.getElementById('wrapIntensity');
-      const wrapIntensityValue = document.getElementById('wrapIntensityValue');
+      // Get references to globe clean control elements
       
       // Get references to globe clean control elements
       const globeCleanButton = document.getElementById('globeCleanButton');
@@ -1312,59 +1064,12 @@
       const cleanWrapIntensitySlider = document.getElementById('cleanWrapIntensity');
       const cleanWrapIntensityValue = document.getElementById('cleanWrapIntensityValue');
       
-      // Globe button click handler
-      globeButton.addEventListener('click', function() {
-        // Toggle globe active state
-        globeActive = !globeActive;
-        
-        // Toggle button styling to show active state
-        if (globeActive) {
-          globeButton.style.backgroundColor = '#0BC5BA';
-          globeControls.style.display = 'block';
-        } else {
-          globeButton.style.backgroundColor = '';
-          globeControls.style.display = 'none';
-        }
-        
-        // Apply the globe wrapping effect or reset
-        applyGlobeWrapping();
-      });
-      
-      // Sphere outline toggle handler
-      sphereOutlineToggle.addEventListener('change', function() {
-        sphereOutlineVisible = this.checked;
-        drawSphereOutline();
-      });
-      
-      // Sphere diameter slider handler
-      sphereDiameterSlider.addEventListener('input', function() {
-        sphereDiameter = parseInt(this.value, 10);
-        sphereDiameterValue.textContent = sphereDiameter;
-        applyGlobeWrapping();
-      });
-      
-      // Wrap intensity slider handler
-      wrapIntensitySlider.addEventListener('input', function() {
-        wrapIntensity = parseInt(this.value, 10);
-        wrapIntensityValue.textContent = wrapIntensity;
-        applyGlobeWrapping();
-        
-        // Update patternSettings to preserve any effects of manipulation
-        // We keep the same pattern properties (line lengths, colors, etc.)
-        // but the pattern will be preserved when returning to the pattern maker
-      });
       
       // Globe Clean button click handler
       globeCleanButton.addEventListener('click', function() {
         // Toggle globe clean active state
         globeCleanActive = !globeCleanActive;
         
-        // If activating Globe Clean, deactivate regular Globe
-        if (globeCleanActive && globeActive) {
-          globeActive = false;
-          globeButton.style.backgroundColor = '';
-          globeControls.style.display = 'none';
-        }
         
         // Toggle button styling to show active state
         if (globeCleanActive) {
@@ -1399,14 +1104,6 @@
         applyGlobeCleanWrapping();
       });
       
-      // Add deactivation of Globe Clean when regular Globe is activated
-      globeButton.addEventListener('click', function() {
-        if (globeActive && globeCleanActive) {
-          globeCleanActive = false;
-          globeCleanButton.style.backgroundColor = '';
-          globeCleanControls.style.display = 'none';
-        }
-      });
       
       // Set up pattern size event listeners
       hexCountInput.addEventListener('change', function() {
@@ -1419,10 +1116,8 @@
         }
         // Update visualization
         initVisualization();
-        // Reapply globe wrapping if active
-        if (globeActive) {
-          applyGlobeWrapping();
-        } else if (globeCleanActive) {
+        // Apply globe clean wrapping if active
+        if (globeCleanActive) {
           applyGlobeCleanWrapping();
         }
       });
@@ -1430,10 +1125,8 @@
       ratioSelect.addEventListener('change', function() {
         aspectRatio = parseRatio(this.value);
         updateVisualizationFrame();
-        // Reapply globe wrapping if active
-        if (globeActive) {
-          applyGlobeWrapping();
-        } else if (globeCleanActive) {
+        // Apply globe clean wrapping if active
+        if (globeCleanActive) {
           applyGlobeCleanWrapping();
         }
       });
@@ -1456,10 +1149,8 @@
       // Handle window resize
       window.addEventListener('resize', function() {
         updateVisualizationFrame();
-        // Reapply appropriate wrapping if active
-        if (globeActive) {
-          applyGlobeWrapping();
-        } else if (globeCleanActive) {
+        // Apply globe clean wrapping if active
+        if (globeCleanActive) {
           applyGlobeCleanWrapping();
         }
       });
