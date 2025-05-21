@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="stylesheet" href="css/fonts.css">
   <style>
     .randomize-button {
-      background-color: #333;
-      color: white;
-      border: none;
+      background-color: #000000;
+      color: #F0F5F7;
+      border: 1px solid #B6C0C4;
       border-radius: 4px;
       padding: 8px 12px;
       font-size: 14px;
@@ -15,23 +16,26 @@
     }
     
     .randomize-button:hover {
-      background-color: #555;
+      background-color: #333;
     }
     
     .background-control {
       width: 100%;
       margin-bottom: 12px;
-      border: 1px solid #ddd;
+      border: 1px solid #B6C0C4;
       border-radius: 6px;
       padding: 8px;
+      background-color: #F0F5F7;
     }
     
     .color-select {
       padding: 4px;
       border-radius: 4px;
-      border: 1px solid #ddd;
+      border: 1px solid #B6C0C4;
       width: 100%;
       height: 28px;
+      background-color: #F0F5F7;
+      color: #000000;
     }
     
     .background-control-header {
@@ -55,7 +59,7 @@
       cursor: pointer;
       width: 16px;
       height: 16px;
-      accent-color: #000;
+      accent-color: #000000;
     }
     
     .checkbox-container {
@@ -73,35 +77,39 @@
       cursor: pointer;
       width: 16px;
       height: 16px;
-      accent-color: #000;
+      accent-color: #000000;
     }
     
     .color-preview {
       width: 20px;
       height: 20px;
-      border: 1px solid #ccc;
+      border: 1px solid #B6C0C4;
       border-radius: 3px;
       display: inline-block;
       vertical-align: middle;
     }
     
     body {
-      font-family: Arial, sans-serif;
+      /* Font is now managed by fonts.css */
       margin: 0;
       padding: 16px;
       display: flex;
       flex-direction: row;
       height: 100vh;
       box-sizing: border-box;
-      color: #333;
+      color: #000000;
+      background-color: #F0F5F7;
     }
     
     .control-panel {
-      width: 320px;
-      padding-right: 16px;
+      width: 370px;
+      padding: 0 25px 16px 16px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
+      box-sizing: border-box;
+      background-color: #F0F5F7;
+      border-right: 1px solid #B6C0C4;
     }
     
     .visualization-panel {
@@ -125,9 +133,10 @@
     .line-control-group {
       width: 100%;
       margin-bottom: 12px;
-      border: 1px solid #ddd;
+      border: 1px solid #B6C0C4;
       border-radius: 6px;
       padding: 8px;
+      background-color: #F0F5F7;
     }
     
     .slider-container {
@@ -146,7 +155,9 @@
     input[type="range"] {
       flex-grow: 1;
       height: 6px;
-      accent-color: #000;
+      accent-color: #000000;
+      background-color: #B6C0C4;
+      border-radius: 3px;
     }
     
     .value-display {
@@ -157,9 +168,9 @@
     }
     
     svg {
-      border: 1px solid #ddd;
+      border: 1px solid #B6C0C4;
       border-radius: 5px;
-      background-color: #f9f9f9;
+      background-color: #FFFFFF;
       max-width: 100%;
       max-height: 90vh;
       width: 800px;
@@ -168,15 +179,17 @@
     
     /* Override default input styling for cleaner look */
     input[type="number"] {
-      border: 1px solid #ddd;
+      border: 1px solid #B6C0C4;
       border-radius: 4px;
       padding: 4px;
       font-size: 14px;
+      background-color: #F0F5F7;
+      color: #000000;
     }
     
     select {
       appearance: none;
-      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23333%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
       background-repeat: no-repeat;
       background-position: right 8px center;
       background-size: 10px;
@@ -186,11 +199,25 @@
 </head>
 <body>
   <div class="control-panel">
-    <h2>Hexagon Grid Controls</h2>
+    <h2>Hexagon Grid Visualizer</h2>
     
-    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-      <button class="randomize-button" id="randomizeButton">Randomize All Settings</button>
-      <button class="randomize-button" id="resetButton" style="background-color: #555;">Reset to Default</button>
+    <div class="background-control">
+      <div class="background-control-header">
+        General Controls
+      </div>
+      <div class="slider-container">
+        <label for="presetSelect">Pre-sets:</label>
+        <select id="presetSelect" class="color-select">
+          <option value="none" selected>None</option>
+          <option value="aec">AEC</option>
+          <option value="financial">Financial Services</option>
+          <option value="lifesciences">Life Sciences</option>
+          <option value="channel">Channel Partners</option>
+          <option value="media">Media & Entertainment</option>
+        </select>
+      </div>
+      <button class="randomize-button" id="randomizeButton" style="width: 100%; margin-bottom: 8px;">Randomize All Settings</button>
+      <button class="randomize-button" id="resetButton" style="width: 100%;">Reset to Default</button>
     </div>
     
     <div class="background-control">
@@ -210,8 +237,8 @@
         <span class="value-display">hexagons</span>
       </div>
       
-      <button class="randomize-button" id="exportButton" style="background-color: #333; width: 100%; margin-bottom: 8px;">Export as SVG</button>
-      <button class="randomize-button" id="openManipulatorButton" style="background-color: #555; width: 100%;">Open Shape Manipulator</button>
+      <button class="randomize-button" id="exportButton" style="width: 100%; margin-bottom: 8px;">Export as SVG</button>
+      <button class="randomize-button" id="openManipulatorButton" style="width: 100%;">Open Shape Manipulator</button>
     </div>
     
     <div class="background-control">
@@ -247,7 +274,8 @@
           <option value="#FF6640">Orange</option>
           <option value="#DA9DFF">Purple</option>
           <option value="#359DFF">Blue</option>
-          <option value="#9BA6AA">Gray</option>
+          <option value="#85E961">Green</option>
+          <option value="#FF51B6">Pink</option>
         </select>
       </div>
       
@@ -999,6 +1027,42 @@
         // The randomizeSettings function will check this value
       });
       
+      // Set up event listener for preset select
+      const presetSelect = document.getElementById('presetSelect');
+      
+      presetSelect.addEventListener('change', function() {
+        const selectedPreset = this.value;
+        applyPreset(selectedPreset);
+      });
+      
+      // Function to apply presets based on the different industry patterns
+      function applyPreset(preset) {
+        if (preset === 'none') {
+          return; // Don't change any settings if 'none' is selected
+        }
+        
+        // Preset color configurations for different industries
+        const presetColors = {
+          'aec': '#FF6640',         // Orange for AEC
+          'financial': '#359DFF',    // Blue for Financial Services
+          'lifesciences': '#85E961', // Green for Life Sciences
+          'channel': '#DA9DFF',      // Purple for Channel Partners
+          'media': '#FF51B6'         // Pink for Media & Entertainment
+        };
+        
+        // Only change the color based on preset
+        if (presetColors[preset]) {
+          const color = presetColors[preset];
+          
+          // Update color in UI
+          document.getElementById('globalColor').value = color;
+          document.getElementById('globalColorPreview').style.backgroundColor = color;
+          
+          // Apply the color change to all lines
+          updateGlobalColor(color);
+        }
+      }
+      
       // Set up event listener for global line color
       const globalColorSelect = document.getElementById('globalColor');
       const globalColorPreview = document.getElementById('globalColorPreview');
@@ -1411,7 +1475,7 @@
     }
     
     // Array of allowed line colors
-    const lineColors = ["#0BC5BA", "#FF6640", "#DA9DFF", "#359DFF", "#9BA6AA"];
+    const lineColors = ["#0BC5BA", "#FF6640", "#DA9DFF", "#359DFF", "#85E961", "#FF51B6"];
     
     // Function to get a random line color from allowed colors
     function getRandomLineColor() {
