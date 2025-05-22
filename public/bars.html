@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="css/fonts.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      box-sizing: border-box;
+      background-color: #F0F5F7;
+    }
+    
+    .control-panel {
+      width: 370px;
+      padding: 0 25px 16px 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      background-color: #F0F5F7;
+      border-right: 1px solid #B6C0C4;
+    }
+    
+    .visualization-panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      text-align: center;
+      font-size: 18px;
+    }
+    
+    .page-toggler {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .page-toggle-button {
+      background-color: #B6C0C4;
+      color: #000000;
+      border: 1px solid #B6C0C4;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      margin: 0 5px;
+    }
+
+    .page-toggle-button.active {
+      background-color: #000000;
+      color: #F0F5F7;
+    }
+    
+    .line-control-group {
+      width: 100%;
+      margin-bottom: 12px;
+      border: 1px solid #B6C0C4;
+      border-radius: 6px;
+      padding: 8px;
+      background-color: #F0F5F7;
+    }
+    
+    .slider-container {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .slider-container label {
+      margin-right: 8px;
+      width: 65px;
+      font-size: 14px;
+    }
+    
+    input[type="range"] {
+      flex-grow: 1;
+      height: 6px;
+      accent-color: #000000;
+      background-color: #B6C0C4;
+      border-radius: 3px;
+    }
+    
+    .value-display {
+      margin-left: 8px;
+      width: 35px;
+      text-align: right;
+      font-size: 14px;
+    }
+    
+    svg {
+      border: 1px solid #B6C0C4;
+      border-radius: 5px;
+      background-color: #FFFFFF;
+      max-width: 100%;
+      max-height: 90vh;
+      width: 800px;
+      height: 600px;
+    }
+    
+    .randomize-button {
+      background-color: #000000;
+      color: #F0F5F7;
+      border: 1px solid #B6C0C4;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-bottom: 15px;
+    }
+    
+    .background-control {
+      width: 100%;
+      margin-bottom: 12px;
+      border: 1px solid #B6C0C4;
+      border-radius: 6px;
+      padding: 8px;
+      background-color: #F0F5F7;
+    }
+    
+    .color-select {
+      padding: 4px;
+      border-radius: 4px;
+      border: 1px solid #B6C0C4;
+      width: 100%;
+      height: 28px;
+      background-color: #F0F5F7;
+      color: #000000;
+    }
+    
+    .background-control-header {
+      font-weight: bold;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .line-control-header {
+      font-weight: bold;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .line-control-header input[type="checkbox"] {
+      margin-left: 8px;
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      accent-color: #000000;
+    }
+    
+    .checkbox-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .checkbox-container label {
+      flex-grow: 1;
+    }
+    
+    .checkbox-container input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      accent-color: #000000;
+    }
+    
+    .color-preview {
+      width: 20px;
+      height: 20px;
+      border: 1px solid #B6C0C4;
+      border-radius: 3px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="control-panel">
+    <h2>Hexagon Grid Visualizer</h2>
+    
+    <div class="page-toggler">
+      <a href="index.html" class="page-toggle-button">Sparks</a>
+      <a href="bars.html" class="page-toggle-button active">Bars</a>
+    </div>
+    
+    <div class="background-control">
+      <div class="background-control-header">
+        General Controls
+      </div>
+      <div class="slider-container">
+        <label for="presetSelect">Pre-sets:</label>
+        <select id="presetSelect" class="color-select">
+          <option value="none" selected>None</option>
+          <option value="egnyte">Egnyte</option>
+          <option value="aec">AEC</option>
+          <option value="financial">Financial Services</option>
+          <option value="lifesciences">Life Sciences</option>
+          <option value="media">Media & Entertainment</option>
+          <option value="channel">Channel Partners</option>
+          <option value="bonus1">Bonus Vertical 1</option>
+          <option value="bonus2">Bonus Vertical 2</option>
+        </select>
+      </div>
+      <div class="checkbox-container">
+        <label for="steppedLineLengths">Stepped Line Lengths:</label>
+        <input type="checkbox" id="steppedLineLengths">
+      </div>
+    </div>
+    
+    <div class="background-control">
+      <div class="background-control-header">
+        Background Color
+        <div class="color-preview" id="backgroundColorPreview" style="background-color: #FFFFFF;"></div>
+      </div>
+      
+      <div class="slider-container">
+        <label for="backgroundColor">Color:</label>
+        <select id="backgroundColor" class="color-select">
+          <option value="#FFFFFF" selected>White</option>
+          <option value="#000000">Black</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="line-control-group">
+      <div class="line-control-header">
+        Line Color (All Lines)
+        <div class="color-preview" id="globalColorPreview" style="background-color: #0BC5BA;"></div>
+      </div>
+      
+      <div class="slider-container">
+        <label for="globalColor">Color:</label>
+        <select id="globalColor" class="color-select">
+          <option value="#0BC5BA" selected>Teal</option>
+          <option value="#FF6640">Orange</option>
+          <option value="#DA9DFF">Purple</option>
+          <option value="#359DFF">Blue</option>
+          <option value="#85E961">Green</option>
+          <option value="#FF51B6">Pink</option>
+        </select>
+      </div>
+      
+      <div class="slider-container" id="globalThicknessContainer">
+        <label for="globalThickness">Thickness:</label>
+        <input type="range" id="globalThickness" min="0.5" max="5" value="1.0" step="0.5">
+        <span id="globalThicknessValue" class="value-display">1.0</span>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <div class="line-control-group">
+        <div class="line-control-header">
+          Batch 1: 12 and 6 o'clock
+          <input type="checkbox" id="batch1Opacity" checked>
+        </div>
+        <div class="slider-container">
+          <label for="batch1GapSize">Length:</label>
+          <input type="range" id="batch1GapSize" min="0" max="100" value="75" step="1">
+          <span id="batch1GapSizeValue" class="value-display">75%</span>
+        </div>
+      </div>
+      
+      <div class="line-control-group">
+        <div class="line-control-header">
+          Batch 2: 1 and 7 o'clock
+          <input type="checkbox" id="batch2Opacity" checked>
+        </div>
+        <div class="slider-container">
+          <label for="batch2GapSize">Length:</label>
+          <input type="range" id="batch2GapSize" min="0" max="100" value="75" step="1">
+          <span id="batch2GapSizeValue" class="value-display">75%</span>
+        </div>
+      </div>
+      
+      <div class="line-control-group">
+        <div class="line-control-header">
+          Batch 3: 2 and 8 o'clock
+          <input type="checkbox" id="batch3Opacity" checked>
+        </div>
+        <div class="slider-container">
+          <label for="batch3GapSize">Length:</label>
+          <input type="range" id="batch3GapSize" min="0" max="100" value="75" step="1">
+          <span id="batch3GapSizeValue" class="value-display">75%</span>
+        </div>
+      </div>
+      
+      <div class="line-control-group">
+        <div class="line-control-header">
+          Batch 4: 3 and 9 o'clock
+          <input type="checkbox" id="batch4Opacity" checked>
+        </div>
+        <div class="slider-container">
+          <label for="batch4GapSize">Length:</label>
+          <input type="range" id="batch4GapSize" min="0" max="100" value="75" step="1">
+          <span id="batch4GapSizeValue" class="value-display">75%</span>
+        </div>
+      </div>
+      
+      <div class="line-control-group">
+        <div class="line-control-header">
+          Batch 5: 4 and 10 o'clock
+          <input type="checkbox" id="batch5Opacity" checked>
+        </div>
+        <div class="slider-container">
+          <label for="batch5GapSize">Length:</label>
+          <input type="range" id="batch5GapSize" min="0" max="100" value="75" step="1">
+          <span id="batch5GapSizeValue" class="value-display">75%</span>
+        </div>
+      </div>
+      
+      <div class="line-control-group">
+        <div class="line-control-header">
+          Batch 6: 5 and 11 o'clock
+          <input type="checkbox" id="batch6Opacity" checked>
+        </div>
+        <div class="slider-container">
+          <label for="batch6GapSize">Length:</label>
+          <input type="range" id="batch6GapSize" min="0" max="100" value="75" step="1">
+          <span id="batch6GapSizeValue" class="value-display">75%</span>
+        </div>
+      </div>
+      
+      <div class="line-control-group">
+        <div class="line-control-header">
+          Edge Lines
+          <input type="checkbox" id="edgeLinesOpacity" checked>
+        </div>
+        <div class="slider-container">
+          <label for="edgeLinesGapSize">Length:</label>
+          <input type="range" id="edgeLinesGapSize" min="0" max="100" value="75" step="1">
+          <span id="edgeLinesGapSizeValue" class="value-display">75%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="visualization-panel">
+    <svg id="hexagonSvg" width="800" height="600" viewBox="-300 -250 600 500"></svg>
+  </div>
+
+<script>
+// Very minimal script to show the visualization
+document.addEventListener('DOMContentLoaded', function() {
+  const svg = document.getElementById('hexagonSvg');
+  const hexRadius = 60;
+  const hexHeight = hexRadius * 2;
+  const hexWidth = hexRadius * Math.sqrt(3);
+  
+  // Store batches of lines
+  const batch1Lines = [];
+  const batch2Lines = [];
+  const batch3Lines = [];
+  const batch4Lines = [];
+  const batch5Lines = [];
+  const batch6Lines = [];
+  const edgeLines = [];
+  
+  // Draw hexagons on a grid
+  function drawHexagons() {
+    // Clear SVG first
+    while (svg.firstChild) {
+      svg.removeChild(svg.firstChild);
+    }
+    
+    // Calculate hexagon points
+    function getHexPoints(centerX, centerY) {
+      const points = [];
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 6;
+        const x = centerX + hexRadius * Math.cos(angle);
+        const y = centerY + hexRadius * Math.sin(angle);
+        points.push({ x, y });
+      }
+      return points;
+    }
+    
+    // Draw a small grid of hexagons
+    for (let row = -2; row <= 2; row++) {
+      const rowOffset = (row % 2 === 0) ? 0 : hexWidth / 2;
+      
+      for (let col = -2; col <= 2; col++) {
+        const centerX = col * hexWidth + rowOffset;
+        const centerY = row * hexHeight * 0.75;
+        
+        // Get hexagon points
+        const hexPoints = getHexPoints(centerX, centerY);
+        
+        // Draw clock-face lines from center
+        const clockAngles = [
+          { hour: 12, angle: Math.PI * 1.5 },
+          { hour: 1, angle: Math.PI * 1.5 + Math.PI/6 },
+          { hour: 2, angle: Math.PI * 1.5 + Math.PI/3 },
+          { hour: 3, angle: 0 },
+          { hour: 4, angle: Math.PI/6 },
+          { hour: 5, angle: Math.PI/3 },
+          { hour: 6, angle: Math.PI/2 },
+          { hour: 7, angle: Math.PI/2 + Math.PI/6 },
+          { hour: 8, angle: Math.PI/2 + Math.PI/3 },
+          { hour: 9, angle: Math.PI },
+          { hour: 10, angle: Math.PI + Math.PI/6 },
+          { hour: 11, angle: Math.PI + Math.PI/3 }
+        ];
+        
+        // Draw each line
+        clockAngles.forEach(pos => {
+          const endX = centerX + hexRadius * Math.cos(pos.angle);
+          const endY = centerY + hexRadius * Math.sin(pos.angle);
+          
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', centerX);
+          line.setAttribute('y1', centerY);
+          line.setAttribute('x2', endX);
+          line.setAttribute('y2', endY);
+          line.setAttribute('stroke', '#0BC5BA');
+          line.setAttribute('stroke-width', '1.0');
+          svg.appendChild(line);
+          
+          // Store line in appropriate batch
+          if (pos.hour === 12 || pos.hour === 6) {
+            batch1Lines.push(line);
+          } else if (pos.hour === 1 || pos.hour === 7) {
+            batch2Lines.push(line);
+          } else if (pos.hour === 2 || pos.hour === 8) {
+            batch3Lines.push(line);
+          } else if (pos.hour === 3 || pos.hour === 9) {
+            batch4Lines.push(line);
+          } else if (pos.hour === 4 || pos.hour === 10) {
+            batch5Lines.push(line);
+          } else if (pos.hour === 5 || pos.hour === 11) {
+            batch6Lines.push(line);
+          }
+        });
+        
+        // Draw hexagon edges
+        for (let i = 0; i < 6; i++) {
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', hexPoints[i].x);
+          line.setAttribute('y1', hexPoints[i].y);
+          line.setAttribute('x2', hexPoints[(i + 1) % 6].x);
+          line.setAttribute('y2', hexPoints[(i + 1) % 6].y);
+          line.setAttribute('stroke', '#0BC5BA');
+          line.setAttribute('stroke-width', '1.0');
+          svg.appendChild(line);
+          
+          edgeLines.push(line);
+        }
+      }
+    }
+  }
+  
+  // Set up event listeners
+  function setupControls() {
+    // Background color
+    document.getElementById('backgroundColor').addEventListener('change', function() {
+      const color = this.value;
+      document.getElementById('backgroundColorPreview').style.backgroundColor = color;
+      svg.style.backgroundColor = color;
+    });
+    
+    // Global color
+    document.getElementById('globalColor').addEventListener('change', function() {
+      const color = this.value;
+      document.getElementById('globalColorPreview').style.backgroundColor = color;
+      
+      const allLines = [...batch1Lines, ...batch2Lines, ...batch3Lines, 
+                       ...batch4Lines, ...batch5Lines, ...batch6Lines, ...edgeLines];
+      allLines.forEach(line => {
+        line.setAttribute('stroke', color);
+      });
+    });
+    
+    // Global thickness
+    document.getElementById('globalThickness').addEventListener('input', function() {
+      const thickness = this.value;
+      document.getElementById('globalThicknessValue').textContent = parseFloat(thickness).toFixed(1);
+      
+      const allLines = [...batch1Lines, ...batch2Lines, ...batch3Lines, 
+                       ...batch4Lines, ...batch5Lines, ...batch6Lines, ...edgeLines];
+      allLines.forEach(line => {
+        line.setAttribute('stroke-width', thickness);
+      });
+    });
+    
+    // Batch visibility
+    function setupBatchVisibility(batchId, batchLines) {
+      document.getElementById(batchId + 'Opacity').addEventListener('change', function() {
+        const opacity = this.checked ? '1' : '0';
+        batchLines.forEach(line => {
+          line.setAttribute('stroke-opacity', opacity);
+        });
+      });
+    }
+    
+    setupBatchVisibility('batch1', batch1Lines);
+    setupBatchVisibility('batch2', batch2Lines);
+    setupBatchVisibility('batch3', batch3Lines);
+    setupBatchVisibility('batch4', batch4Lines);
+    setupBatchVisibility('batch5', batch5Lines);
+    setupBatchVisibility('batch6', batch6Lines);
+    setupBatchVisibility('edgeLines', edgeLines);
+  }
+  
+  // Initialize
+  drawHexagons();
+  setupControls();
+});
+</script>
+</body>
+</html>

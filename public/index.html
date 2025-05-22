@@ -126,6 +126,33 @@
       font-size: 18px;
     }
     
+    .page-toggler {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .page-toggle-button {
+      background-color: #B6C0C4;
+      color: #000000;
+      border: 1px solid #B6C0C4;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      margin: 0 5px;
+    }
+
+    .page-toggle-button.active {
+      background-color: #000000;
+      color: #F0F5F7;
+    }
+
+    .page-toggle-button:hover:not(.active) {
+      background-color: #ddd;
+    }
+    
     .controls {
       width: 100%;
     }
@@ -158,6 +185,20 @@
       accent-color: #000000;
       background-color: #B6C0C4;
       border-radius: 3px;
+      width: 100%;
+    }
+    
+    .stepped-slider {
+      background: linear-gradient(to right,
+        #B6C0C4 0%, #B6C0C4 100%
+      ) no-repeat center;
+      background-size: 100% 6px;
+      position: relative;
+    }
+    
+    /* Minimal styling for stepped sliders - no tick marks */
+    .stepped-slider {
+      position: relative;
     }
     
     .value-display {
@@ -201,6 +242,11 @@
   <div class="control-panel">
     <h2>Hexagon Grid Visualizer</h2>
     
+    <div class="page-toggler">
+      <a href="index.html" class="page-toggle-button active">Sparks</a>
+      <a href="bars.html" class="page-toggle-button">Bars</a>
+    </div>
+    
     <div class="background-control">
       <div class="background-control-header">
         General Controls
@@ -215,6 +261,10 @@
           <option value="channel">Channel Partners</option>
           <option value="media">Media & Entertainment</option>
         </select>
+      </div>
+      <div class="checkbox-container">
+        <label for="steppedLineLengths">Stepped Line Lengths:</label>
+        <input type="checkbox" id="steppedLineLengths">
       </div>
       <button class="randomize-button" id="randomizeButton" style="width: 100%; margin-bottom: 8px;">Randomize All Settings</button>
       <button class="randomize-button" id="resetButton" style="width: 100%;">Reset to Default</button>
@@ -603,28 +653,63 @@
       updateAllSettings();
     }
     
+    // Apply stepped line lengths for a given length based on visibility
+    function applySteppedLength(length, visible) {
+      // If not visible, return 0
+      if (!visible) return 0;
+      
+      // If visible, snap to nearest step (25%, 50%, 75%, 100%)
+      if (length <= 12) return 25;
+      if (length <= 37) return 25;
+      if (length <= 62) return 50;
+      if (length <= 87) return 75;
+      return 100;
+    }
+    
     // Function to update all current settings on the lines
     function updateAllSettings() {
       // Get current values from UI controls
-      const blueYLength = parseInt(document.getElementById('blueYGapSize').value);
+      let blueYLength = parseInt(document.getElementById('blueYGapSize').value);
       const blueYVisible = document.getElementById('blueYOpacity').checked;
       const blueYThickness = parseFloat(document.getElementById('blueYThickness').value);
       
-      const blueALength = parseInt(document.getElementById('blueAGapSize').value);
+      let blueALength = parseInt(document.getElementById('blueAGapSize').value);
       const blueAVisible = document.getElementById('blueAOpacity').checked;
       const blueAThickness = parseFloat(document.getElementById('blueAThickness').value);
       
-      const blackLength = parseInt(document.getElementById('blackGapSize').value);
+      let blackLength = parseInt(document.getElementById('blackGapSize').value);
       const blackVisible = document.getElementById('blackOpacity').checked;
       const blackThickness = parseFloat(document.getElementById('blackThickness').value);
       
-      const redLength = parseInt(document.getElementById('redGapSize').value);
+      let redLength = parseInt(document.getElementById('redGapSize').value);
       const redVisible = document.getElementById('redOpacity').checked;
       const redThickness = parseFloat(document.getElementById('redThickness').value);
       
       const globalColor = document.getElementById('globalColor').value;
       const equalThicknessEnabled = document.getElementById('equalThickness').checked;
       const globalThickness = parseFloat(document.getElementById('globalThickness').value);
+      const steppedMode = document.getElementById('steppedLineLengths').checked;
+      
+      // Apply stepped line lengths if that mode is enabled
+      if (steppedMode) {
+        blueYLength = applySteppedLength(blueYLength, blueYVisible);
+        blueALength = applySteppedLength(blueALength, blueAVisible);
+        blackLength = applySteppedLength(blackLength, blackVisible);
+        redLength = applySteppedLength(redLength, redVisible);
+        
+        // Update UI to reflect the stepped values
+        document.getElementById('blueYGapSize').value = blueYLength;
+        document.getElementById('blueYGapSizeValue').textContent = blueYLength + '%';
+        
+        document.getElementById('blueAGapSize').value = blueALength;
+        document.getElementById('blueAGapSizeValue').textContent = blueALength + '%';
+        
+        document.getElementById('blackGapSize').value = blackLength;
+        document.getElementById('blackGapSizeValue').textContent = blackLength + '%';
+        
+        document.getElementById('redGapSize').value = redLength;
+        document.getElementById('redGapSizeValue').textContent = redLength + '%';
+      }
       
       // Apply all settings
       updateBlueYGapSize(blueYLength);
@@ -1108,15 +1193,74 @@
       const blueYThicknessSlider = document.getElementById('blueYThickness');
       const blueYThicknessValue = document.getElementById('blueYThicknessValue');
       
+      // Set up event listener for stepped line lengths toggle
+      const steppedLineLengthsToggle = document.getElementById('steppedLineLengths');
+      
+      // Simple function to toggle stepped slider class without any tick marks
+      function applySteppedSliderStyling(slider, isSteppedMode) {
+        if (isSteppedMode) {
+          // Add the stepped-slider class
+          slider.classList.add('stepped-slider');
+        } else {
+          // Remove the stepped-slider class
+          slider.classList.remove('stepped-slider');
+        }
+      }
+      
+      steppedLineLengthsToggle.addEventListener('change', function() {
+        const isSteppedMode = this.checked;
+        
+        // Apply stepped styling to all sliders
+        applySteppedSliderStyling(blueYGapSlider, isSteppedMode);
+        applySteppedSliderStyling(blueAGapSlider, isSteppedMode);
+        applySteppedSliderStyling(blackGapSlider, isSteppedMode);
+        applySteppedSliderStyling(redGapSlider, isSteppedMode);
+        
+        // Update all settings to apply stepped values if enabled
+        updateAllSettings();
+      });
+      
       blueYGapSlider.addEventListener('input', function() {
         const value = parseInt(this.value);
         blueYGapValue.textContent = value + '%';
-        updateBlueYGapSize(value);
+        
+        // If stepped mode is enabled, update with stepped values
+        if (steppedLineLengthsToggle.checked) {
+          // If slider is at 0, also uncheck visibility
+          if (value === 0) {
+            blueYOpacityCheckbox.checked = false;
+            updateBlueYOpacity(0);
+          } else if (value > 0 && !blueYOpacityCheckbox.checked) {
+            // If moving from 0 to something else, check visibility
+            blueYOpacityCheckbox.checked = true;
+            updateBlueYOpacity(1);
+          }
+          
+          // Apply stepped values
+          const steppedValue = applySteppedLength(value, blueYOpacityCheckbox.checked);
+          this.value = steppedValue;
+          blueYGapValue.textContent = steppedValue + '%';
+          updateBlueYGapSize(steppedValue);
+        } else {
+          // Normal mode
+          updateBlueYGapSize(value);
+        }
       });
       
       blueYOpacityCheckbox.addEventListener('change', function() {
-        const value = this.checked ? 1 : 0;
+        const isChecked = this.checked;
+        const value = isChecked ? 1 : 0;
         updateBlueYOpacity(value);
+        
+        // In stepped mode, when checkbox is toggled
+        if (steppedLineLengthsToggle.checked) {
+          // When checked, set length to 25%
+          // When unchecked, set length to 0%
+          const newLength = isChecked ? 25 : 0;
+          blueYGapSlider.value = newLength;
+          blueYGapValue.textContent = newLength + '%';
+          updateBlueYGapSize(newLength);
+        }
       });
       
       blueYThicknessSlider.addEventListener('input', function() {
@@ -1135,12 +1279,44 @@
       blueAGapSlider.addEventListener('input', function() {
         const value = parseInt(this.value);
         blueAGapValue.textContent = value + '%';
-        updateBlueAGapSize(value);
+        
+        // If stepped mode is enabled, update with stepped values
+        if (steppedLineLengthsToggle.checked) {
+          // If slider is at 0, also uncheck visibility
+          if (value === 0) {
+            blueAOpacityCheckbox.checked = false;
+            updateBlueAOpacity(0);
+          } else if (value > 0 && !blueAOpacityCheckbox.checked) {
+            // If moving from 0 to something else, check visibility
+            blueAOpacityCheckbox.checked = true;
+            updateBlueAOpacity(1);
+          }
+          
+          // Apply stepped values
+          const steppedValue = applySteppedLength(value, blueAOpacityCheckbox.checked);
+          this.value = steppedValue;
+          blueAGapValue.textContent = steppedValue + '%';
+          updateBlueAGapSize(steppedValue);
+        } else {
+          // Normal mode
+          updateBlueAGapSize(value);
+        }
       });
       
       blueAOpacityCheckbox.addEventListener('change', function() {
-        const value = this.checked ? 1 : 0;
+        const isChecked = this.checked;
+        const value = isChecked ? 1 : 0;
         updateBlueAOpacity(value);
+        
+        // In stepped mode, when checkbox is toggled
+        if (steppedLineLengthsToggle.checked) {
+          // When checked, set length to 25%
+          // When unchecked, set length to 0%
+          const newLength = isChecked ? 25 : 0;
+          blueAGapSlider.value = newLength;
+          blueAGapValue.textContent = newLength + '%';
+          updateBlueAGapSize(newLength);
+        }
       });
       
       blueAThicknessSlider.addEventListener('input', function() {
@@ -1159,12 +1335,44 @@
       blackGapSlider.addEventListener('input', function() {
         const value = parseInt(this.value);
         blackGapValue.textContent = value + '%';
-        updateBlackGapSize(value);
+        
+        // If stepped mode is enabled, update with stepped values
+        if (steppedLineLengthsToggle.checked) {
+          // If slider is at 0, also uncheck visibility
+          if (value === 0) {
+            blackOpacityCheckbox.checked = false;
+            updateBlackOpacity(0);
+          } else if (value > 0 && !blackOpacityCheckbox.checked) {
+            // If moving from 0 to something else, check visibility
+            blackOpacityCheckbox.checked = true;
+            updateBlackOpacity(1);
+          }
+          
+          // Apply stepped values
+          const steppedValue = applySteppedLength(value, blackOpacityCheckbox.checked);
+          this.value = steppedValue;
+          blackGapValue.textContent = steppedValue + '%';
+          updateBlackGapSize(steppedValue);
+        } else {
+          // Normal mode
+          updateBlackGapSize(value);
+        }
       });
       
       blackOpacityCheckbox.addEventListener('change', function() {
-        const value = this.checked ? 1 : 0;
+        const isChecked = this.checked;
+        const value = isChecked ? 1 : 0;
         updateBlackOpacity(value);
+        
+        // In stepped mode, when checkbox is toggled
+        if (steppedLineLengthsToggle.checked) {
+          // When checked, set length to 25%
+          // When unchecked, set length to 0%
+          const newLength = isChecked ? 25 : 0;
+          blackGapSlider.value = newLength;
+          blackGapValue.textContent = newLength + '%';
+          updateBlackGapSize(newLength);
+        }
       });
       
       blackThicknessSlider.addEventListener('input', function() {
@@ -1183,12 +1391,44 @@
       redGapSlider.addEventListener('input', function() {
         const value = parseInt(this.value);
         redGapValue.textContent = value + '%';
-        updateRedGapSize(value);
+        
+        // If stepped mode is enabled, update with stepped values
+        if (steppedLineLengthsToggle.checked) {
+          // If slider is at 0, also uncheck visibility
+          if (value === 0) {
+            redOpacityCheckbox.checked = false;
+            updateRedOpacity(0);
+          } else if (value > 0 && !redOpacityCheckbox.checked) {
+            // If moving from 0 to something else, check visibility
+            redOpacityCheckbox.checked = true;
+            updateRedOpacity(1);
+          }
+          
+          // Apply stepped values
+          const steppedValue = applySteppedLength(value, redOpacityCheckbox.checked);
+          this.value = steppedValue;
+          redGapValue.textContent = steppedValue + '%';
+          updateRedGapSize(steppedValue);
+        } else {
+          // Normal mode
+          updateRedGapSize(value);
+        }
       });
       
       redOpacityCheckbox.addEventListener('change', function() {
-        const value = this.checked ? 1 : 0;
+        const isChecked = this.checked;
+        const value = isChecked ? 1 : 0;
         updateRedOpacity(value);
+        
+        // In stepped mode, when checkbox is toggled
+        if (steppedLineLengthsToggle.checked) {
+          // When checked, set length to 25%
+          // When unchecked, set length to 0%
+          const newLength = isChecked ? 25 : 0;
+          redGapSlider.value = newLength;
+          redGapValue.textContent = newLength + '%';
+          updateRedGapSize(newLength);
+        }
       });
       
       redThicknessSlider.addEventListener('input', function() {
@@ -1496,6 +1736,12 @@
       return min + (Math.floor(Math.random() * steps) * step);
     }
     
+    // Function to get random stepped value for lengths (0%, 25%, 50%, 75%, 100%)
+    function getRandomSteppedValue() {
+      const values = [0, 25, 50, 75, 100];
+      return values[Math.floor(Math.random() * values.length)];
+    }
+    
     // Function to randomize all settings
     function randomizeSettings() {
       // Randomize global line color
@@ -1548,38 +1794,64 @@
         }
       }
       
+      // Check if stepped mode is enabled
+      const steppedMode = document.getElementById('steppedLineLengths').checked;
+      
       // Randomize line lengths and visibility settings for all line types
       
       // Central Lines A
-      const blueYLength = getRandomValue(0, 100, 1);
+      let blueYLength, blueYVisible;
+      if (steppedMode) {
+        // In stepped mode, get a random stepped value
+        blueYLength = getRandomSteppedValue();
+        // If length is 0, visibility is off; otherwise it's on
+        blueYVisible = blueYLength > 0;
+      } else {
+        // In free mode, get any random value
+        blueYLength = getRandomValue(0, 100, 1);
+        blueYVisible = Math.random() > 0.2;
+      }
       document.getElementById('blueYGapSize').value = blueYLength;
       document.getElementById('blueYGapSizeValue').textContent = blueYLength + '%';
-      
-      const blueYVisible = Math.random() > 0.2;
       document.getElementById('blueYOpacity').checked = blueYVisible;
       
       // Central Lines Y
-      const blueALength = getRandomValue(0, 100, 1);
+      let blueALength, blueAVisible;
+      if (steppedMode) {
+        blueALength = getRandomSteppedValue();
+        blueAVisible = blueALength > 0;
+      } else {
+        blueALength = getRandomValue(0, 100, 1);
+        blueAVisible = Math.random() > 0.2;
+      }
       document.getElementById('blueAGapSize').value = blueALength;
       document.getElementById('blueAGapSizeValue').textContent = blueALength + '%';
-      
-      const blueAVisible = Math.random() > 0.2;
       document.getElementById('blueAOpacity').checked = blueAVisible;
       
       // Edge Lines
-      const blackLength = getRandomValue(0, 100, 1);
+      let blackLength, blackVisible;
+      if (steppedMode) {
+        blackLength = getRandomSteppedValue();
+        blackVisible = blackLength > 0;
+      } else {
+        blackLength = getRandomValue(0, 100, 1);
+        blackVisible = Math.random() > 0.2;
+      }
       document.getElementById('blackGapSize').value = blackLength;
       document.getElementById('blackGapSizeValue').textContent = blackLength + '%';
-      
-      const blackVisible = Math.random() > 0.2;
       document.getElementById('blackOpacity').checked = blackVisible;
       
       // Extra Lines
-      const redLength = getRandomValue(0, 100, 1);
+      let redLength, redVisible;
+      if (steppedMode) {
+        redLength = getRandomSteppedValue();
+        redVisible = redLength > 0;
+      } else {
+        redLength = getRandomValue(0, 100, 1);
+        redVisible = Math.random() > 0.2;
+      }
       document.getElementById('redGapSize').value = redLength;
       document.getElementById('redGapSizeValue').textContent = redLength + '%';
-      
-      const redVisible = Math.random() > 0.2;
       document.getElementById('redOpacity').checked = redVisible;
       
       // Apply all settings at once - this will respect the equal thickness setting
