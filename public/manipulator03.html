@@ -1,19 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Shape Manipulator 02</title>
+  <title>Shape Manipulator 03</title>
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/omni-style.css">
 </head>
 <body>
   <div class="control-panel">
-    <h2>Shape Manipulator 02</h2>
-    <div class="page-toggler">
-      <a href="index.html" class="page-toggle-button">Omni</a>
-      <a href="manipulator02.html" class="page-toggle-button active">M2</a>
-      <a href="manipulator04.html" class="page-toggle-button">M4</a>
+    <div class="top-navigation">
+      <a href="index.html" class="button nav-button">Omni/Index</a>
+      <a href="manipulator02.html" class="button nav-button">M2</a>
+      <!-- Add other manipulator links here if any in the future -->
     </div>
-    <button class="button back-button" id="backButton" style="display: none;">Back to Pattern Maker Page</button> <!-- Hidden as per new nav -->
+    <h2>Shape Manipulator 03</h2>
 
     <div class="control-group">
       <h3>Screen Ratio</h3>
@@ -38,7 +37,7 @@
       <div class="control-item">
         <div class="slider-container">
           <label for="hexCount">Hexagons Wide:</label>
-          <input type="number" id="hexCount" min="1" max="100" value="5"> <!-- Default to 5 -->
+          <input type="number" id="hexCount" min="1" max="100" value="5"> <!-- Default to 5 for M3 -->
           <span class="value-display">hexagons</span>
         </div>
       </div>
@@ -65,13 +64,13 @@
           <div class="manipulator-control-item">
             <label for="cleanSphereDiameter">Sphere Diameter: <span id="cleanSphereDiameterValue">75</span>%</label>
             <div class="slider-container">
-              <input type="range" id="cleanSphereDiameter" min="10" max="300" value="75"> <!-- Default to 75% -->
+              <input type="range" id="cleanSphereDiameter" min="10" max="300" value="75"> <!-- Default to 75% for M3 -->
             </div>
           </div>
           <div class="manipulator-control-item">
             <label for="cleanWrapIntensity">Wrap Intensity: <span id="cleanWrapIntensityValue">100</span>%</label>
             <div class="slider-container">
-              <input type="range" id="cleanWrapIntensity" min="0" max="100" value="100"> <!-- Default to 100% -->
+              <input type="range" id="cleanWrapIntensity" min="0" max="100" value="100"> <!-- Default to 100% for M3 -->
             </div>
           </div>
         </div>
@@ -99,26 +98,18 @@
     // Line width scaling
     let lineWidthScale = 1; // Will adjust to maintain consistent line width ratios
 
-    // Globe manipulator configuration
-    let globeCleanActive = true; // Default to active for M2
+    // Globe manipulator configuration - M3 defaults
+    let globeCleanActive = true; // Default to active for M3
     let cleanSphereOutlineVisible = true;
-    let cleanSphereDiameter = 75; // Default to 75% for M2
-    let cleanWrapIntensity = 100; // Default to 100% for M2
+    let cleanSphereDiameter = 75; // Default to 75% for M3
+    let cleanWrapIntensity = 100; // Default to 100% for M3
 
     // Pattern storage
     let patternSettings = {
       omniLinePercentages: {}, // Will store percentages for each BASE_LINE_ID
       globalColor: '#0BC5BA',
       backgroundColor: '#FFFFFF',
-      // Thicknesses will be set from index.html's global line weight
-      // For simplicity in M2, we can initially apply one of these to all lines,
-      // e.g., blackThickness, or define a new globalThickness property.
-      // Let's assume index.html passes blueYThickness, blueAThickness, blackThickness, redThickness
-      // and M2 will use blackThickness for all its lines for now.
-      blueYThickness: 1.5, 
-      blueAThickness: 1.5,
-      blackThickness: 1.5, // This will be the primary thickness used in M2
-      redThickness: 1.5 
+      globalLineWeight: 1.0 // M3 uses a single global line weight
     };
 
     // BASE_LINE_IDS from omniHexagon.js
@@ -135,27 +126,26 @@
     const frame = document.getElementById('visualizationFrame');
     const hexCountInput = document.getElementById('hexCount');
     const ratioSelect = document.getElementById('screenRatio');
-    const backButton = document.getElementById('backButton'); // Still used for localStorage saving
 
     // Line elements arrays - will now be a single array of all lines
     let allDrawnLines = []; // Will store objects { element, baseId, originalP1, originalP2 }
 
-    const INDEX_TO_M2_STORAGE_KEY = 'hexagonPattern'; // Key used by index.html to pass settings
-    const M2_OWN_STATE_KEY = 'manipulator02PatternState'; // Key for M2 to save/load its own state
+    const INDEX_TO_M3_STORAGE_KEY = 'manipulator03Pattern'; // Key used by index.html to pass settings to M3
+    const M3_OWN_STATE_KEY = 'manipulator03State'; // Key for M3 to save/load its own state
 
     function loadPatternSettings() {
-      const fromIndexString = localStorage.getItem(INDEX_TO_M2_STORAGE_KEY);
+      const fromIndexString = localStorage.getItem(INDEX_TO_M3_STORAGE_KEY);
       let settingsApplied = false;
 
       if (fromIndexString) {
-        console.log('Settings found from index.html (hexagonPattern)');
+        console.log('Settings found from index.html (manipulator03Pattern)');
         try {
           const fromIndexSettings = JSON.parse(fromIndexString);
           
           patternSettings.globalColor = fromIndexSettings.globalColor || patternSettings.globalColor;
           patternSettings.backgroundColor = fromIndexSettings.backgroundColor || patternSettings.backgroundColor;
-          // All lines in M2 will use blackThickness for now, which is set by index.html's globalLineWeight
-          patternSettings.blackThickness = fromIndexSettings.blackThickness || patternSettings.blackThickness;
+          patternSettings.globalLineWeight = fromIndexSettings.globalLineWeight || patternSettings.globalLineWeight;
+          
           // Store the detailed percentages directly
           if (fromIndexSettings.omniLinePercentages) {
             patternSettings.omniLinePercentages = { ...fromIndexSettings.omniLinePercentages };
@@ -164,65 +154,54 @@
           }
           
           console.log('Applied settings from index.html:', patternSettings);
-          localStorage.removeItem(INDEX_TO_M2_STORAGE_KEY); 
+          localStorage.removeItem(INDEX_TO_M3_STORAGE_KEY); 
           settingsApplied = true;
         } catch (e) {
-          console.error('Error parsing settings from index.html (hexagonPattern):', e);
-          localStorage.removeItem(INDEX_TO_M2_STORAGE_KEY); // Clean up corrupted key
+          console.error('Error parsing settings from index.html (manipulator03Pattern):', e);
+          localStorage.removeItem(INDEX_TO_M3_STORAGE_KEY); // Clean up corrupted key
         }
       } else {
-        // Not coming from index.html, try to load M2's own saved state
-        const m2OwnStateString = localStorage.getItem(M2_OWN_STATE_KEY);
-        if (m2OwnStateString) {
-          console.log('Loading M2 own saved state (manipulator02PatternState)');
+        // Not coming from index.html, try to load M3's own saved state
+        const m3OwnStateString = localStorage.getItem(M3_OWN_STATE_KEY);
+        if (m3OwnStateString) {
+          console.log('Loading M3 own saved state (manipulator03State)');
           try {
-            const m2OwnSettings = JSON.parse(m2OwnStateString);
-            patternSettings = { ...patternSettings, ...m2OwnSettings.patternSettings }; // Restore full patternSettings
-            // Restore other M2 specific UI states from its own saved state
-            hexCountInput.value = m2OwnSettings.hexCount || 5; // hexCount is UI, not in patternSettings
-            cleanSphereDiameter = m2OwnSettings.cleanSphereDiameter || 75; // UI state
-            cleanWrapIntensity = m2OwnSettings.cleanWrapIntensity || 100; // UI state
-            globeCleanActive = m2OwnSettings.globeCleanActive !== undefined ? m2OwnSettings.globeCleanActive : true; // UI state
-            cleanSphereOutlineVisible = m2OwnSettings.cleanSphereOutlineVisible !== undefined ? m2OwnSettings.cleanSphereOutlineVisible : true; // UI state
-            aspectRatio = m2OwnSettings.aspectRatio || { width: 1, height: 1 }; // UI state
+            const m3OwnSettings = JSON.parse(m3OwnStateString);
+            patternSettings = { ...patternSettings, ...m3OwnSettings.patternSettings }; // Restore full patternSettings
+            // Restore other M3 specific UI states from its own saved state
+            hexCountInput.value = m3OwnSettings.hexCount || 5; // hexCount is UI, not in patternSettings
+            cleanSphereDiameter = m3OwnSettings.cleanSphereDiameter || 75; // UI state
+            cleanWrapIntensity = m3OwnSettings.cleanWrapIntensity || 100; // UI state
+            globeCleanActive = m3OwnSettings.globeCleanActive !== undefined ? m3OwnSettings.globeCleanActive : true; // UI state
+            cleanSphereOutlineVisible = m3OwnSettings.cleanSphereOutlineVisible !== undefined ? m3OwnSettings.cleanSphereOutlineVisible : true; // UI state
+            aspectRatio = m3OwnSettings.aspectRatio || { width: 1, height: 1 }; // UI state
             ratioSelect.value = `${aspectRatio.width}:${aspectRatio.height}`; // Update UI
 
             settingsApplied = true;
-            console.log('Applied M2 own saved state.');
-            // patternSettings.omniLinePercentages would have been loaded from m2OwnSettings.patternSettings
+            console.log('Applied M3 own saved state.');
           } catch (e) {
-            console.error('Error parsing M2 own saved state (manipulator02PatternState):', e);
+            console.error('Error parsing M3 own saved state (manipulator03State):', e);
           }
         }
       }
 
-      // Regardless of where settings came from (or if none came),
-      // ALWAYS apply M2's specific operational requirements when it loads.
-      // If coming from index, these might override parts of what was loaded if there's a conflict,
-      // or set them if they weren't in the 'hexagonPattern' object.
-      // If loading M2's own state, these ensure M2 starts with these key parameters.
-      // If no settings loaded, these are the defaults.
-
+      // M3's specific operational requirements
       hexCountInput.value = settingsApplied ? (hexCountInput.value || 5) : 5; // Prioritize loaded if available, else 5
       
-      // For sphere diameter and wrap intensity, if we are coming from index.html,
-      // the requirement is to set them to 75% and 100% respectively.
-      // If loading M2's own state, we use what was saved.
-      // If nothing loaded, use M2 defaults.
+      // For M3: if coming from index.html, apply M3 requirements (100% wrap, 75% diameter, 5 hexagons)
       if (fromIndexString) { // Coming from index.html
         cleanSphereDiameter = 75;
         cleanWrapIntensity = 100;
         globeCleanActive = true;
+        hexCountInput.value = 5;
       } else if (!settingsApplied) { // No settings loaded at all
         cleanSphereDiameter = 75;
         cleanWrapIntensity = 100;
         globeCleanActive = true;
+        hexCountInput.value = 5;
       }
-      // If settingsApplied is true but fromIndexString is false, it means M2's own state was loaded,
-      // so cleanSphereDiameter, cleanWrapIntensity, globeCleanActive would have been set from m2OwnSettings if they existed there.
 
       // Update UI elements based on the final determined values
-      // hexCountInput is already updated if m2OwnSettings were loaded.
       document.getElementById('cleanSphereDiameter').value = cleanSphereDiameter; 
       document.getElementById('cleanSphereDiameterValue').textContent = cleanSphereDiameter;
       document.getElementById('cleanWrapIntensity').value = cleanWrapIntensity;
@@ -237,8 +216,8 @@
         document.getElementById('globeCleanControls').style.display = 'none';
       }
       
-      console.log('Final patternSettings after load and M2 defaults:', patternSettings);
-      console.log(`Final M2 params: hexCount=${hexCountInput.value}, diam=${cleanSphereDiameter}, wrap=${cleanWrapIntensity}, globeActive=${globeCleanActive}`);
+      console.log('Final patternSettings after load and M3 defaults:', patternSettings);
+      console.log(`Final M3 params: hexCount=${hexCountInput.value}, diam=${cleanSphereDiameter}, wrap=${cleanWrapIntensity}, globeActive=${globeCleanActive}`);
       
       // Explicitly call for redraw after all settings are finalized.
       updateVisualizationFrame(); // This will call initVisualization()
@@ -247,7 +226,7 @@
       return settingsApplied;
     }
 
-    function saveM2State() {
+    function saveM3State() {
       const currentState = {
         patternSettings: patternSettings,
         hexCount: parseInt(hexCountInput.value, 10),
@@ -257,8 +236,8 @@
         cleanSphereOutlineVisible: cleanSphereOutlineVisible,
         aspectRatio: aspectRatio // Save current aspect ratio
       };
-      localStorage.setItem(M2_OWN_STATE_KEY, JSON.stringify(currentState));
-      console.log('M2 state saved to manipulator02PatternState.');
+      localStorage.setItem(M3_OWN_STATE_KEY, JSON.stringify(currentState));
+      console.log('M3 state saved to manipulator03State.');
     }
 
     // Helper to get point on circle, similar to omniHexagon.js
@@ -329,8 +308,8 @@
                 line.setAttribute("y2", p_2.y);
                 line.setAttribute("id", uniqueLineId);
                 line.setAttribute("stroke", patternSettings.globalColor);
-                // Apply scaled thickness. Using blackThickness as the 'global' thickness from index.html
-                const scaledThickness = (patternSettings.blackThickness || 1.5) * lineWidthScale;
+                // Apply scaled thickness using global line weight
+                const scaledThickness = (patternSettings.globalLineWeight || 1.0) * lineWidthScale;
                 line.setAttribute("stroke-width", scaledThickness);
                 line.setAttribute("stroke-opacity", "1"); // Default to visible, length will hide if 0%
 
@@ -412,7 +391,7 @@
             allDrawnLines.push(...createHexagonLines(currentHexCenterX, currentHexCenterY, hexRadius, hexIdPrefix));
         }
       }
-      updateLineLengthsAndVisibility(); // New function to apply omniLinePercentages
+      updateLineLengthsAndVisibility(); // Apply omniLinePercentages
     }
 
     function updateLineLengthsAndVisibility() {
@@ -566,14 +545,14 @@
           const visibilityThreshold = 0.01 * (wrapFactor <= 0.9 ? 1 : 0);
           if (frontalness < visibilityThreshold) return { x: centerX, y: centerY, hidden: true };
         }
-        const nz = Math.sqrt(Math.max(0, frontalness)) * wrapFactor; // Ensure frontalness is not negative
+        const nz = Math.sqrt(Math.max(0, frontalness)) * wrapFactor;
         const scale = 1 / (1 - nz * 0.5);
         return { x: centerX + dx * scale, y: centerY + dy * scale, hidden: false };
       }
 
       allDrawnLines.forEach(lineInfo => {
         const lineElement = lineInfo.element;
-        const data = originalLineData.get(lineElement.id); // Get original points from map
+        const data = originalLineData.get(lineElement.id);
         if (!data) return;
 
         const { originalP1, originalP2, baseId } = data;
@@ -602,13 +581,10 @@
             lineElement.setAttribute('stroke-opacity', '1'); 
         }
       });
-      drawCleanSphereOutline(); // Redraw outline after projections
+      drawCleanSphereOutline();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      // loadPatternSettings will now handle the initial rendering calls.
-      // No need to call updateVisualizationFrame or applyGlobeCleanWrapping directly here
-      // if loadPatternSettings does it at the end.
       loadPatternSettings(); 
 
       const globeCleanButton = document.getElementById('globeCleanButton');
@@ -620,7 +596,7 @@
       const cleanWrapIntensityValue = document.getElementById('cleanWrapIntensityValue');
 
       // Initialize UI from potentially loaded or default values
-      hexCountInput.value = parseInt(hexCountInput.value, 10); // Ensure it's a number from potential string
+      hexCountInput.value = parseInt(hexCountInput.value, 10);
       cleanSphereDiameterSlider.value = cleanSphereDiameter;
       cleanSphereDiameterValue.textContent = cleanSphereDiameter;
       cleanWrapIntensitySlider.value = cleanWrapIntensity;
@@ -633,7 +609,6 @@
         globeCleanButton.style.backgroundColor = '';
         globeCleanControls.style.display = 'none';
       }
-
 
       globeCleanButton.addEventListener('click', function() {
         globeCleanActive = !globeCleanActive;
@@ -678,23 +653,14 @@
         if (globeCleanActive) applyGlobeCleanWrapping();
       });
 
-      // The original backButton is hidden, but its click logic saves settings.
-      // We need to ensure settings are saved when navigating via new top nav.
-      // For simplicity, we can trigger the save when any of the top nav links are clicked,
-      // except for the active one.
-      document.querySelectorAll('.page-toggler .page-toggle-button').forEach(button => {
-        if (!button.classList.contains('active')) { // Don't save if clicking current page link
+      // Save state when navigating via top nav
+      document.querySelectorAll('.top-navigation .nav-button').forEach(button => {
+        if (!button.classList.contains('active')) {
             button.addEventListener('click', () => {
-                saveM2State();
+                saveM3State();
             });
         }
       });
-
-      // The original backButton is hidden, but if it were used, it should also save state.
-      // backButton.addEventListener('click', function() {
-      //   saveM2State();
-      //   window.location.href = 'index.html'; 
-      // });
 
       const exportButton = document.getElementById('exportButton');
       exportButton.addEventListener('click', function() {
@@ -709,7 +675,7 @@
         const sphereRadius = (minDimension / 2) * (cleanSphereDiameter / 100);
 
         if (globeCleanActive) {
-          const bufferPercentage = 0.05; // Reduced buffer
+          const bufferPercentage = 0.05;
           const bufferSize = sphereRadius * bufferPercentage;
           const globeLeft = centerX - sphereRadius - bufferSize;
           const globeTop = centerY - sphereRadius - bufferSize;
@@ -729,11 +695,11 @@
           if (!child.classList.contains('sphere-outline')) {
             if (globeCleanActive && child.tagName === 'line') {
               const opacity = parseFloat(child.getAttribute('stroke-opacity') || '1');
-              if (opacity > 0) { // Only export visible lines
+              if (opacity > 0) {
                 const clonedNode = child.cloneNode(true);
                 exportSvg.appendChild(clonedNode);
               }
-            } else if (!globeCleanActive) { // If not globe mode, export all non-outline children
+            } else if (!globeCleanActive) {
               const clonedNode = child.cloneNode(true);
               exportSvg.appendChild(clonedNode);
             }
@@ -747,7 +713,7 @@
         downloadLink.href = URL.createObjectURL(blob);
         const now = new Date();
         const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
-        let filename = `hexagon-pattern-M2`;
+        let filename = `hexagon-pattern-M3`;
         if (globeCleanActive) {
           filename += `_globe-${cleanSphereDiameter}diam-${cleanWrapIntensity}wrap`;
         }
@@ -758,9 +724,7 @@
         document.body.removeChild(downloadLink);
       });
 
-      aspectRatio = parseRatio(ratioSelect.value); // Set initial aspect ratio from select
-      // updateVisualizationFrame(); // Called by loadPatternSettings
-      // applyGlobeCleanWrapping(); // Called by loadPatternSettings
+      aspectRatio = parseRatio(ratioSelect.value);
 
       window.addEventListener('resize', function() {
         updateVisualizationFrame();

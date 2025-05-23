@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manipulator 05</title>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/omni-style.css">
+</head>
+<body>
+  <div class="control-panel">
+    <h2>Manipulator 05</h2>
+    
+    <div class="page-toggler">
+      <a href="index.html" class="page-toggle-button">Omni</a>
+      <a href="manipulator02.html" class="page-toggle-button">M2</a>
+      <a href="manipulator04.html" class="page-toggle-button">M4</a>
+    </div>
+
+    <div class="control-group">
+      <h3>Screen Ratio</h3>
+      <div class="control-item">
+        <div class="slider-container">
+          <label for="screenRatio" style="min-width: 100px;">Select Ratio:</label>
+          <select id="screenRatio" class="color-select" style="flex-grow: 1;">
+            <option value="1:1">1:1 (Square)</option>
+            <option value="3:4">3:4 (Portrait)</option>
+            <option value="4:3">4:3 (Landscape)</option>
+            <option value="2:3">2:3 (Portrait)</option>
+            <option value="3:2">3:2 (Landscape)</option>
+            <option value="9:16">9:16 (Portrait)</option>
+            <option value="16:9">16:9 (Landscape)</option>
+            <option value="1:3">1:3 (Tall Portrait)</option>
+            <option value="3:1">3:1 (Wide Landscape)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <h3>Pattern Size</h3>
+      <div class="control-item">
+        <div class="slider-container">
+          <label for="hexCount" style="min-width: 100px;">Hexagons Wide:</label>
+          <input type="number" id="hexCount" min="1" max="100" value="5" style="width: 60px;">
+          <span class="value-display">hexagons</span>
+        </div>
+      </div>
+      <div class="control-item">
+        <button class="button" id="exportButton" style="width: 100%; background-color: #000000;">Export as SVG</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <h3>Globe Settings</h3>
+      <div class="control-item">
+        <div class="checkbox-container">
+          <label for="sphereOutlineToggle">Sphere Outline:</label>
+          <input type="checkbox" id="sphereOutlineToggle" checked>
+        </div>
+      </div>
+      <div class="control-item">
+        <div class="slider-container">
+          <label for="sphereDiameter" style="min-width: 100px;">Sphere Diameter:</label>
+          <input type="range" id="sphereDiameter" min="10" max="300" value="75" style="flex-grow: 1;">
+          <span id="sphereDiameterValue" class="value-display">75%</span>
+        </div>
+      </div>
+      <div class="control-item">
+        <div class="slider-container">
+          <label for="wrapIntensity" style="min-width: 100px;">Wrap Intensity:</label>
+          <input type="range" id="wrapIntensity" min="0" max="100" value="100" style="flex-grow: 1;">
+          <span id="wrapIntensityValue" class="value-display">100%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="visualization-panel">
+    <div class="visualization-container">
+      <div class="visualization-frame" id="visualizationFrame">
+        <svg id="hexagonSvg" viewBox="0 0 800 600">
+          <!-- Hexagon grid will be drawn here -->
+        </svg>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Configuration (copied from original manipulator.html)
+    const baseHexRadius = 60;
+    let hexRadius;
+    const corners = 6;
+    let aspectRatio = { width: 1, height: 1 };
+    let lineWidthScale = 1;
+    
+    // Globe manipulator configuration
+    let globeCleanActive = true;
+    let cleanSphereOutlineVisible = true;
+    let cleanSphereDiameter = 75;
+    let cleanWrapIntensity = 100;
+    
+    // Pattern storage - will be loaded from index
+    let patternSettings = {
+      blueYLength: 100,
+      blueYVisible: true,
+      blueALength: 100,
+      blueAVisible: true,
+      blackLength: 100,
+      blackVisible: true,
+      redLength: 100,
+      redVisible: true,
+      globalColor: '#000000',
+      backgroundColor: '#FFFFFF',
+      blueYThickness: 1.5,
+      blueAThickness: 1.5,
+      blackThickness: 1.5,
+      redThickness: 1.0
+    };
+    
+    // DOM Elements
+    const svg = document.getElementById('hexagonSvg');
+    const frame = document.getElementById('visualizationFrame');
+    const hexCountInput = document.getElementById('hexCount');
+    const ratioSelect = document.getElementById('screenRatio');
+    const cleanSphereOutlineToggle = document.getElementById('sphereOutlineToggle');
+    const cleanSphereDiameterSlider = document.getElementById('sphereDiameter');
+    const cleanSphereDiameterValue = document.getElementById('sphereDiameterValue');
+    const cleanWrapIntensitySlider = document.getElementById('wrapIntensity');
+    const cleanWrapIntensityValue = document.getElementById('wrapIntensityValue');
+    const exportButton = document.getElementById('exportButton');
+    
+    // Line elements arrays (copied from original manipulator.html)
+    let blueYLines = [];
+    let blueALines = [];
+    let blackLines = [];
+    let redLines = [];
+
+    // Load pattern settings from index localStorage
+    function loadIndexPatternSettings() {
+      const OMNI_INDEX_STATE_KEY = 'omniIndexState';
+      const savedStateString = localStorage.getItem(OMNI_INDEX_STATE_KEY);
+      if (savedStateString) {
+        try {
+          const savedState = JSON.parse(savedStateString);
+          console.log('Loaded index state:', savedState);
+          
+          // Map index state to manipulator pattern settings
+          patternSettings.globalColor = savedState.currentGlobalLineColor || '#000000';
+          patternSettings.backgroundColor = '#FFFFFF';
+          
+          // Map line percentages to manipulator format
+          const linePercentages = savedState.currentLinePercentages || {};
+          patternSettings.blueYLength = linePercentages.hexLine1 || 100;
+          patternSettings.blueALength = linePercentages.hexLine4 || 100;
+          patternSettings.blackLength = linePercentages.hexLine7 || 100;
+          patternSettings.redLength = linePercentages.hexLine8 || 100;
+          
+          // All lines visible by default
+          patternSettings.blueYVisible = true;
+          patternSettings.blueAVisible = true;
+          patternSettings.blackVisible = true;
+          patternSettings.redVisible = true;
+          
+          // Line weights
+          const globalWeight = savedState.currentGlobalLineWeight || 1;
+          patternSettings.blueYThickness = globalWeight * 1.5;
+          patternSettings.blueAThickness = globalWeight * 1.5;
+          patternSettings.blackThickness = globalWeight * 1.5;
+          patternSettings.redThickness = globalWeight * 1.0;
+          
+          return true;
+        } catch (e) {
+          console.error('Error loading index state:', e);
+        }
+      }
+      return false;
+    }
+    
+    // Calculate hexagon corners (copied from original)
+    function calculateHexagonPoints(centerX, centerY, radius) {
+      const points = [];
+      for (let i = 0; i < corners; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 6;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        points.push({ x, y });
+      }
+      return points;
+    }
+    
+    // Calculate distance between two points (copied from original)
+    function distance(p1, p2) {
+      return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+    }
+    
+    // Calculate point at distance (copied from original)
+    function pointAtDistance(start, end, dist) {
+      const totalDist = distance(start, end);
+      const ratio = dist / totalDist;
+      
+      return {
+        x: start.x + (end.x - start.x) * ratio,
+        y: start.y + (end.y - start.y) * ratio
+      };
+    }
+    
+    // Create a single hexagon (copied and adapted from original)
+    function createHexagon(centerX, centerY, radius) {
+      const hexPoints = calculateHexagonPoints(centerX, centerY, radius);
+      const center = { x: centerX, y: centerY };
+      const hexBlueYLines = [];
+      const hexBlueALines = [];
+      const hexBlackLines = [];
+      const hexRedLines = [];
+      
+      const scaledBlueYThickness = patternSettings.blueYThickness * lineWidthScale;
+      const scaledBlueAThickness = patternSettings.blueAThickness * lineWidthScale;
+      const scaledBlackThickness = patternSettings.blackThickness * lineWidthScale;
+      const scaledRedThickness = patternSettings.redThickness * lineWidthScale;
+      
+      // Create Y and A lines from center to corners
+      for (let i = 0; i < corners; i++) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', center.x);
+        line.setAttribute('y1', center.y);
+        line.setAttribute('x2', hexPoints[i].x);
+        line.setAttribute('y2', hexPoints[i].y);
+        
+        if (i === 1 || i === 3 || i === 5) { // Y group
+          line.setAttribute('stroke', patternSettings.globalColor);
+          line.setAttribute('stroke-width', scaledBlueYThickness);
+          svg.appendChild(line);
+          hexBlueYLines.push({
+            element: line,
+            start: center,
+            end: hexPoints[i]
+          });
+        } else { // A group
+          line.setAttribute('stroke', patternSettings.globalColor);
+          line.setAttribute('stroke-width', scaledBlueAThickness);
+          svg.appendChild(line);
+          hexBlueALines.push({
+            element: line,
+            start: center,
+            end: hexPoints[i]
+          });
+        }
+        
+        line.setAttribute('stroke-opacity', '1');
+      }
+      
+      // Create red lines (extra lines)
+      for (let i = 0; i < corners; i++) {
+        const baseAngle = (Math.PI / 3) * i - Math.PI / 6;
+        
+        const angles = [
+          baseAngle + Math.PI/6,
+          baseAngle - Math.PI/6
+        ];
+        
+        for (const angle of angles) {
+          const endX = centerX + radius * Math.cos(angle);
+          const endY = centerY + radius * Math.sin(angle);
+          const endpoint = { x: endX, y: endY };
+          
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', center.x);
+          line.setAttribute('y1', center.y);
+          line.setAttribute('x2', endX);
+          line.setAttribute('y2', endY);
+          line.setAttribute('stroke', patternSettings.globalColor);
+          line.setAttribute('stroke-width', scaledRedThickness);
+          line.setAttribute('stroke-opacity', '1');
+          svg.appendChild(line);
+          hexRedLines.push({
+            element: line,
+            start: center,
+            end: endpoint
+          });
+        }
+      }
+      
+      // Create hexagon outer lines (black)
+      for (let i = 0; i < corners; i++) {
+        const startPoint = hexPoints[i];
+        const endPoint = hexPoints[(i + 1) % corners];
+        
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', startPoint.x);
+        line.setAttribute('y1', startPoint.y);
+        line.setAttribute('x2', endPoint.x);
+        line.setAttribute('y2', endPoint.y);
+        line.setAttribute('stroke', patternSettings.globalColor);
+        line.setAttribute('stroke-width', scaledBlackThickness);
+        line.setAttribute('stroke-opacity', '1');
+        svg.appendChild(line);
+        hexBlackLines.push({
+          element: line,
+          start: startPoint,
+          end: endPoint
+        });
+      }
+      
+      return { 
+        blueYLines: hexBlueYLines,
+        blueALines: hexBlueALines,
+        blackLines: hexBlackLines, 
+        redLines: hexRedLines 
+      };
+    }
+    
+    // Update visualization frame (copied from original)
+    function updateVisualizationFrame() {
+      const container = document.querySelector('.visualization-container');
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      
+      let frameWidth, frameHeight;
+      
+      if (containerWidth / containerHeight > aspectRatio.width / aspectRatio.height) {
+        frameHeight = containerHeight;
+        frameWidth = frameHeight * (aspectRatio.width / aspectRatio.height);
+      } else {
+        frameWidth = containerWidth;
+        frameHeight = frameWidth * (aspectRatio.height / aspectRatio.width);
+      }
+      
+      frame.style.width = `${frameWidth}px`;
+      frame.style.height = `${frameHeight}px`;
+      
+      svg.setAttribute('viewBox', `0 0 ${aspectRatio.width * 100} ${aspectRatio.height * 100}`);
+      
+      initVisualization();
+    }
+    
+    // Calculate hexagon sizing (copied from original)
+    function calculateHexagonSizing() {
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      
+      const hexagonCount = parseInt(hexCountInput.value, 10);
+      const totalHexagons = hexagonCount + 2;
+      
+      hexRadius = viewportWidth / (totalHexagons * Math.sqrt(3));
+      lineWidthScale = hexRadius / baseHexRadius;
+      
+      return {
+        width: hexRadius * Math.sqrt(3) * 2,
+        height: hexRadius * 2,
+        horizontalSpacing: hexRadius * Math.sqrt(3),
+        verticalSpacing: hexRadius * 1.5
+      };
+    }
+    
+    // Initialize visualization (copied from original)
+    function initVisualization() {
+      // Clear existing SVG elements
+      while (svg.firstChild) {
+        svg.removeChild(svg.firstChild);
+      }
+      
+      blueYLines = [];
+      blueALines = [];
+      blackLines = [];
+      redLines = [];
+      
+      svg.style.backgroundColor = patternSettings.backgroundColor;
+      
+      const hexDims = calculateHexagonSizing();
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      
+      const centerX = viewportWidth / 2;
+      const centerY = viewportHeight / 2;
+      
+      const hexWidth = hexDims.horizontalSpacing * 2;
+      const hexHeight = hexRadius * 2;
+      
+      const hexagonCount = parseInt(hexCountInput.value, 10);
+      const isEven = hexagonCount % 2 === 0;
+      const colsEachSide = Math.ceil(hexagonCount / 2) + 1;
+      const rowsEachSide = Math.ceil((viewportHeight / hexDims.verticalSpacing) / 2) + 1;
+      
+      // Create center hexagon
+      const centerHexagon = createHexagon(centerX, centerY, hexRadius);
+      blueYLines.push(...centerHexagon.blueYLines);
+      blueALines.push(...centerHexagon.blueALines);
+      blackLines.push(...centerHexagon.blackLines);
+      redLines.push(...centerHexagon.redLines);
+      
+      // Create rows above and below
+      for (let row = 1; row <= rowsEachSide; row++) {
+        const rowCenterY1 = centerY - (row * hexDims.verticalSpacing);
+        const rowCenterY2 = centerY + (row * hexDims.verticalSpacing);
+        
+        for (let col = -colsEachSide; col <= colsEachSide; col++) {
+          const rowOffset = (row % 2 === 0) ? 0 : hexDims.horizontalSpacing / 2;
+          const colCenterX = centerX + (col * hexDims.horizontalSpacing) + rowOffset;
+          
+          if (colCenterX >= -hexWidth && colCenterX <= viewportWidth + hexWidth) {
+            const hex1 = createHexagon(colCenterX, rowCenterY1, hexRadius);
+            const hex2 = createHexagon(colCenterX, rowCenterY2, hexRadius);
+            
+            blueYLines.push(...hex1.blueYLines, ...hex2.blueYLines);
+            blueALines.push(...hex1.blueALines, ...hex2.blueALines);
+            blackLines.push(...hex1.blackLines, ...hex2.blackLines);
+            redLines.push(...hex1.redLines, ...hex2.redLines);
+          }
+        }
+      }
+      
+      // Create hexagons left and right of center
+      for (let col = -colsEachSide; col <= colsEachSide; col++) {
+        if (col !== 0) {
+          const colCenterX = centerX + (col * hexDims.horizontalSpacing);
+          
+          if (colCenterX >= -hexWidth && colCenterX <= viewportWidth + hexWidth) {
+            const hex = createHexagon(colCenterX, centerY, hexRadius);
+            
+            blueYLines.push(...hex.blueYLines);
+            blueALines.push(...hex.blueALines);
+            blackLines.push(...hex.blackLines);
+            redLines.push(...hex.redLines);
+          }
+        }
+      }
+      
+      updatePatternSettings();
+    }
+    
+    // Update pattern settings (copied from original)
+    function updatePatternSettings() {
+      // Update Y lines
+      blueYLines.forEach(line => {
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (patternSettings.blueYLength / 100);
+        const gapSize = (totalLength - visibleLength) / 2;
+        
+        if (patternSettings.blueYLength > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+        
+        line.element.setAttribute('stroke-opacity', patternSettings.blueYVisible ? '1' : '0');
+      });
+      
+      // Update A lines
+      blueALines.forEach(line => {
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (patternSettings.blueALength / 100);
+        const gapSize = (totalLength - visibleLength) / 2;
+        
+        if (patternSettings.blueALength > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+        
+        line.element.setAttribute('stroke-opacity', patternSettings.blueAVisible ? '1' : '0');
+      });
+      
+      // Update Black lines
+      blackLines.forEach(line => {
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (patternSettings.blackLength / 100);
+        const gapSize = (totalLength - visibleLength) / 2;
+        
+        if (patternSettings.blackLength > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+        
+        line.element.setAttribute('stroke-opacity', patternSettings.blackVisible ? '1' : '0');
+      });
+      
+      // Update Red lines
+      redLines.forEach(line => {
+        const totalLength = distance(line.start, line.end);
+        const visibleLength = totalLength * (patternSettings.redLength / 100);
+        const gapSize = (totalLength - visibleLength) / 2;
+        
+        if (patternSettings.redLength > 0) {
+          const startPoint = pointAtDistance(line.start, line.end, gapSize);
+          const endPoint = pointAtDistance(line.end, line.start, gapSize);
+          
+          line.element.setAttribute('x1', startPoint.x);
+          line.element.setAttribute('y1', startPoint.y);
+          line.element.setAttribute('x2', endPoint.x);
+          line.element.setAttribute('y2', endPoint.y);
+        } else {
+          const centerX = (line.start.x + line.end.x) / 2;
+          const centerY = (line.start.y + line.end.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+        
+        line.element.setAttribute('stroke-opacity', patternSettings.redVisible ? '1' : '0');
+      });
+    }
+    
+    // Parse ratio string
+    function parseRatio(ratioStr) {
+      const parts = ratioStr.split(':');
+      return {
+        width: parseInt(parts[0], 10),
+        height: parseInt(parts[1], 10)
+      };
+    }
+    
+    // Draw sphere outline (copied from original)
+    function drawCleanSphereOutline() {
+      const existingOutline = svg.querySelector('.sphere-outline');
+      if (existingOutline) {
+        existingOutline.remove();
+      }
+      
+      if (!globeCleanActive || !cleanSphereOutlineVisible) return;
+      
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      
+      const centerX = viewportWidth / 2;
+      const centerY = viewportHeight / 2;
+      
+      const minDimension = Math.min(viewportWidth, viewportHeight);
+      const sphereRadius = (minDimension / 2) * (cleanSphereDiameter / 100);
+      
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', centerX);
+      circle.setAttribute('cy', centerY);
+      circle.setAttribute('r', sphereRadius);
+      circle.setAttribute('class', 'sphere-outline');
+      circle.setAttribute('fill', 'none');
+      circle.setAttribute('stroke', '#666');
+      circle.setAttribute('stroke-width', '1');
+      circle.setAttribute('stroke-dasharray', '4 4');
+      circle.setAttribute('pointer-events', 'none');
+      svg.appendChild(circle);
+    }
+    
+    // Apply globe wrapping (copied exactly from original manipulator.html)
+    function applyGlobeCleanWrapping() {
+      if (!globeCleanActive) {
+        updatePatternSettings();
+        const existingOutline = svg.querySelector('.sphere-outline');
+        if (existingOutline) {
+          existingOutline.remove();
+        }
+        return;
+      }
+      
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      const centerX = viewportWidth / 2;
+      const centerY = viewportHeight / 2;
+      
+      const minDimension = Math.min(viewportWidth, viewportHeight);
+      const sphereRadius = (minDimension / 2) * (cleanSphereDiameter / 100);
+      
+      if (cleanWrapIntensity === 0) {
+        updatePatternSettings();
+        
+        const allLines = [...blueYLines, ...blueALines, ...blackLines, ...redLines];
+        
+        allLines.forEach(line => {
+          const currentX1 = parseFloat(line.element.getAttribute('x1'));
+          const currentY1 = parseFloat(line.element.getAttribute('y1'));
+          const currentX2 = parseFloat(line.element.getAttribute('x2'));
+          const currentY2 = parseFloat(line.element.getAttribute('y2'));
+          
+          const point1 = { x: currentX1, y: currentY1 };
+          const point2 = { x: currentX2, y: currentY2 };
+          
+          const distance1 = Math.sqrt(
+            Math.pow(point1.x - centerX, 2) + 
+            Math.pow(point1.y - centerY, 2)
+          );
+          
+          const distance2 = Math.sqrt(
+            Math.pow(point2.x - centerX, 2) + 
+            Math.pow(point2.y - centerY, 2)
+          );
+          
+          if (distance1 <= sphereRadius && distance2 <= sphereRadius) {
+            if ((blueYLines.includes(line) && patternSettings.blueYVisible) ||
+                (blueALines.includes(line) && patternSettings.blueAVisible) ||
+                (blackLines.includes(line) && patternSettings.blackVisible) ||
+                (redLines.includes(line) && patternSettings.redVisible)) {
+              line.element.setAttribute('stroke-opacity', '1');
+            }
+          }
+          else if (distance1 > sphereRadius && distance2 > sphereRadius) {
+            line.element.setAttribute('stroke-opacity', '0');
+          }
+          else {
+            const insidePoint = distance1 <= sphereRadius ? point1 : point2;
+            const outsidePoint = distance1 <= sphereRadius ? point2 : point1;
+            
+            const dx = outsidePoint.x - insidePoint.x;
+            const dy = outsidePoint.y - insidePoint.y;
+            
+            const cx = insidePoint.x - centerX;
+            const cy = insidePoint.y - centerY;
+            
+            const a = dx * dx + dy * dy;
+            const b = cx * dx + cy * dy;
+            const c = cx * cx + cy * cy - sphereRadius * sphereRadius;
+            
+            const discriminant = b * b - a * c;
+            if (discriminant >= 0) {
+              const t = (-b + Math.sqrt(discriminant)) / a;
+              if (t >= 0 && t <= 1) {
+                const intersectionX = insidePoint.x + t * dx;
+                const intersectionY = insidePoint.y + t * dy;
+                
+                if (distance1 <= sphereRadius) {
+                  line.element.setAttribute('x1', insidePoint.x);
+                  line.element.setAttribute('y1', insidePoint.y);
+                  line.element.setAttribute('x2', intersectionX);
+                  line.element.setAttribute('y2', intersectionY);
+                } else {
+                  line.element.setAttribute('x1', intersectionX);
+                  line.element.setAttribute('y1', intersectionY);
+                  line.element.setAttribute('x2', insidePoint.x);
+                  line.element.setAttribute('y2', insidePoint.y);
+                }
+                
+                if ((blueYLines.includes(line) && patternSettings.blueYVisible) ||
+                    (blueALines.includes(line) && patternSettings.blueAVisible) ||
+                    (blackLines.includes(line) && patternSettings.blackVisible) ||
+                    (redLines.includes(line) && patternSettings.redVisible)) {
+                  line.element.setAttribute('stroke-opacity', '1');
+                }
+              } else {
+                line.element.setAttribute('stroke-opacity', '0');
+              }
+            } else {
+              line.element.setAttribute('stroke-opacity', '0');
+            }
+          }
+        });
+        
+        drawCleanSphereOutline();
+        return;
+      }
+      
+      // For wrap intensity > 0, apply sphere projection
+      const allLines = [...blueYLines, ...blueALines, ...blackLines, ...redLines];
+      
+      function projectOntoSphere(point) {
+        const dx = point.x - centerX;
+        const dy = point.y - centerY;
+        const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+        
+        const normalizedDistance = distanceFromCenter / sphereRadius;
+        
+        if (normalizedDistance > 1) {
+          return {
+            x: centerX,
+            y: centerY,
+            hidden: true
+          };
+        }
+        
+        const nx = dx / sphereRadius;
+        const ny = dy / sphereRadius;
+        
+        const wrapFactor = cleanWrapIntensity / 100;
+        const frontalness = 1 - (nx * nx + ny * ny);
+        
+        if (wrapFactor >= 0.8) {
+          const visibilityThreshold = 0.01 * (wrapFactor <= 0.9 ? 1 : 0);
+          if (frontalness < visibilityThreshold) {
+            return {
+              x: centerX,
+              y: centerY,
+              hidden: true
+            };
+          }
+        }
+        
+        const nz = Math.sqrt(frontalness) * wrapFactor;
+        const scale = 1 / (1 - nz * 0.5);
+        
+        return {
+          x: centerX + dx * scale,
+          y: centerY + dy * scale,
+          hidden: false
+        };
+      }
+      
+      allLines.forEach(line => {
+        const originalStart = line.start;
+        const originalEnd = line.end;
+        
+        const totalLength = distance(originalStart, originalEnd);
+        let visibleLength;
+        let gapSize;
+        
+        if (blueYLines.includes(line)) {
+          visibleLength = totalLength * (patternSettings.blueYLength / 100);
+          gapSize = (totalLength - visibleLength) / 2;
+        } else if (blueALines.includes(line)) {
+          visibleLength = totalLength * (patternSettings.blueALength / 100);
+          gapSize = (totalLength - visibleLength) / 2;
+        } else if (blackLines.includes(line)) {
+          visibleLength = totalLength * (patternSettings.blackLength / 100);
+          gapSize = (totalLength - visibleLength) / 2;
+        } else {
+          visibleLength = totalLength * (patternSettings.redLength / 100);
+          gapSize = (totalLength - visibleLength) / 2;
+        }
+        
+        if (visibleLength > 0) {
+          const startPoint = pointAtDistance(originalStart, originalEnd, gapSize);
+          const endPoint = pointAtDistance(originalEnd, originalStart, gapSize);
+          
+          const projectedVisibleStart = projectOntoSphere(startPoint);
+          const projectedVisibleEnd = projectOntoSphere(endPoint);
+          
+          if (projectedVisibleStart.hidden || projectedVisibleEnd.hidden) {
+            line.element.setAttribute('stroke-opacity', '0');
+          } else {
+            line.element.setAttribute('x1', projectedVisibleStart.x);
+            line.element.setAttribute('y1', projectedVisibleStart.y);
+            line.element.setAttribute('x2', projectedVisibleEnd.x);
+            line.element.setAttribute('y2', projectedVisibleEnd.y);
+            
+            if ((blueYLines.includes(line) && patternSettings.blueYVisible) ||
+                (blueALines.includes(line) && patternSettings.blueAVisible) ||
+                (blackLines.includes(line) && patternSettings.blackVisible) ||
+                (redLines.includes(line) && patternSettings.redVisible)) {
+              line.element.setAttribute('stroke-opacity', '1');
+            }
+          }
+        } else {
+          const centerX = (originalStart.x + originalEnd.x) / 2;
+          const centerY = (originalStart.y + originalEnd.y) / 2;
+          line.element.setAttribute('x1', centerX);
+          line.element.setAttribute('y1', centerY);
+          line.element.setAttribute('x2', centerX);
+          line.element.setAttribute('y2', centerY);
+        }
+      });
+      
+      drawCleanSphereOutline();
+    }
+    
+    // Export function
+    function exportSVG() {
+      const exportSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      
+      const viewBox = svg.viewBox.baseVal;
+      const backgroundColor = svg.style.backgroundColor || patternSettings.backgroundColor;
+      
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      const centerX = viewportWidth / 2;
+      const centerY = viewportHeight / 2;
+      
+      const minDimension = Math.min(viewportWidth, viewportHeight);
+      const sphereRadius = (minDimension / 2) * (cleanSphereDiameter / 100);
+      
+      if (globeCleanActive) {
+        const bufferPercentage = 0.2;
+        const bufferSize = sphereRadius * bufferPercentage;
+        
+        const globeLeft = centerX - sphereRadius - bufferSize;
+        const globeTop = centerY - sphereRadius - bufferSize;
+        const globeSize = (sphereRadius + bufferSize) * 2;
+        
+        exportSvg.setAttribute('width', globeSize);
+        exportSvg.setAttribute('height', globeSize);
+        exportSvg.setAttribute('viewBox', `${globeLeft} ${globeTop} ${globeSize} ${globeSize}`);
+      } else {
+        exportSvg.setAttribute('width', viewBox.width);
+        exportSvg.setAttribute('height', viewBox.height);
+        exportSvg.setAttribute('viewBox', `0 0 ${viewBox.width} ${viewBox.height}`);
+      }
+      
+      exportSvg.setAttribute('style', `background-color: ${backgroundColor};`);
+      exportSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      
+      Array.from(svg.children).forEach(child => {
+        if (!child.classList.contains('sphere-outline')) {
+          if (globeCleanActive && child.tagName === 'line') {
+            const opacity = parseFloat(child.getAttribute('stroke-opacity') || '1');
+            if (opacity > 0) {
+              const clonedNode = child.cloneNode(true);
+              exportSvg.appendChild(clonedNode);
+            }
+          } else {
+            const clonedNode = child.cloneNode(true);
+            exportSvg.appendChild(clonedNode);
+          }
+        }
+      });
+      
+      const serializer = new XMLSerializer();
+      let svgString = serializer.serializeToString(exportSvg);
+      svgString = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + svgString;
+      
+      const blob = new Blob([svgString], {type: 'image/svg+xml'});
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(blob);
+      
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
+      
+      let filename = `manipulator05`;
+      if (globeCleanActive) {
+        filename += `_globe-${cleanSphereDiameter}diam-${cleanWrapIntensity}wrap`;
+      }
+      filename += `_${timestamp}.svg`;
+      
+      downloadLink.download = filename;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+
+    // Event listeners
+    window.addEventListener('DOMContentLoaded', () => {
+      loadIndexPatternSettings();
+      
+      hexCountInput.addEventListener('change', function() {
+        const value = parseInt(this.value, 10);
+        if (value < 1) this.value = 1;
+        else if (value > 100) this.value = 100;
+        initVisualization();
+        if (globeCleanActive) {
+          applyGlobeCleanWrapping();
+        }
+      });
+      
+      ratioSelect.addEventListener('change', function() {
+        aspectRatio = parseRatio(this.value);
+        updateVisualizationFrame();
+        if (globeCleanActive) {
+          applyGlobeCleanWrapping();
+        }
+      });
+      
+      cleanSphereOutlineToggle.addEventListener('change', function() {
+        cleanSphereOutlineVisible = this.checked;
+        drawCleanSphereOutline();
+      });
+      
+      cleanSphereDiameterSlider.addEventListener('input', function() {
+        cleanSphereDiameter = parseInt(this.value, 10);
+        cleanSphereDiameterValue.textContent = cleanSphereDiameter + '%';
+        applyGlobeCleanWrapping();
+      });
+      
+      cleanWrapIntensitySlider.addEventListener('input', function() {
+        cleanWrapIntensity = parseInt(this.value, 10);
+        cleanWrapIntensityValue.textContent = cleanWrapIntensity + '%';
+        applyGlobeCleanWrapping();
+      });
+      
+      exportButton.addEventListener('click', exportSVG);
+      
+      aspectRatio = parseRatio(ratioSelect.value);
+      updateVisualizationFrame();
+      applyGlobeCleanWrapping();
+      
+      window.addEventListener('resize', function() {
+        updateVisualizationFrame();
+        if (globeCleanActive) {
+          applyGlobeCleanWrapping();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

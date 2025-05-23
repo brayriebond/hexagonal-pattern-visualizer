@@ -9,12 +9,11 @@
 </head>
 <body>
   <div class="control-panel">
-    <h2>Omni Visualizer Controls</h2>
+    <h2>Pattern Maker</h2>
     
     <div class="page-toggler">
-      <a href="index.html" class="page-toggle-button active">Omni</a>
-      <a href="manipulator.html" class="page-toggle-button">Manipulator</a>
-      <a href="manipulator02.html" id="manipulator02Link" class="page-toggle-button">M2</a>
+      <a href="index.html" class="page-toggle-button active">Maker</a>
+      <a href="manipulator04.html" id="manipulator04Link" class="page-toggle-button">Manipulator</a>
     </div>
 
     <!-- Global Hexagon Size Control -->
@@ -587,26 +586,11 @@
         });
 
         // Add event listeners to save state before navigating
-        const manipulatorLink = document.querySelector('a[href="manipulator.html"]');
-        if (manipulatorLink) {
-            manipulatorLink.addEventListener('click', saveOmniIndexState);
-        }
-
-        const manipulator02Link = document.getElementById('manipulator02Link');
-        if (manipulator02Link) {
-            manipulator02Link.addEventListener('click', function() {
+        const manipulator04Link = document.getElementById('manipulator04Link');
+        if (manipulator04Link) {
+            manipulator04Link.addEventListener('click', function() {
                 saveOmniIndexState(); // Save index state first
-                const m2TransferSettings = {
-                    omniLinePercentages: { ...currentLinePercentages }, // Pass current line states from index.html
-                    globalColor: currentGlobalLineColor,
-                    backgroundColor: '#FFFFFF', // M2 default background
-                    // Apply index.html's global line weight to all manipulator line thicknesses
-                    blueYThickness: currentGlobalLineWeight,
-                    blueAThickness: currentGlobalLineWeight,
-                    blackThickness: currentGlobalLineWeight,
-                    redThickness: currentGlobalLineWeight
-                };
-                localStorage.setItem('hexagonPattern', JSON.stringify(m2TransferSettings));
+                // M4 automatically loads state from OMNI_INDEX_STATE_KEY
             });
         }
     });
