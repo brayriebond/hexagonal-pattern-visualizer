@@ -14,6 +14,7 @@
     <div class="page-toggler">
       <a href="index.html" class="page-toggle-button active">Omni</a>
       <a href="manipulator.html" class="page-toggle-button">Manipulator</a>
+      <a href="manipulator02.html" id="manipulator02Link" class="page-toggle-button">M2</a>
     </div>
 
     <!-- Global Hexagon Size Control -->
@@ -98,6 +99,7 @@
   <script type="module">
     import { drawHexagonGrid, updateLineLength, BASE_LINE_IDS, updateGlobalLineColor, updateGlobalLineWeight } from './js/omniHexagon.js';
 
+    const OMNI_INDEX_STATE_KEY = 'omniIndexState';
     const defaultHexRadius = 80;
     const viewBoxData = { x: -400, y: -300, width: 800, height: 600 };
     const svgContainer = document.getElementById('omniVisualizationSvg');
@@ -114,7 +116,7 @@
     let currentGlobalLineWeight = 1; 
     let isLineColorLocked = false; 
     let isLineWeightLocked = false; 
-
+    let currentActiveTabId = 'bars'; // Default active tab
 
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabPanes = document.querySelectorAll('.tab-content .tab-pane');
@@ -476,15 +478,81 @@
     }
 
 
-    document.addEventListener('DOMContentLoaded', () => {
-        hexagonSizeSlider.value = defaultHexRadius; 
-        hexagonSizeValueDisplay.textContent = defaultHexRadius;
-        
-        if (Object.keys(currentLinePercentages).length === 0) { 
-             BASE_LINE_IDS.forEach(id => currentLinePercentages[id] = 100);
-        }
+    function saveOmniIndexState() {
+        const state = {
+            currentGlobalLineColor,
+            currentGlobalLineWeight,
+            isLineColorLocked,
+            isLineWeightLocked,
+            currentActiveTabId: document.querySelector('.tab-button.active')?.dataset.tab || 'bars',
+            currentLinePercentages: { ...currentLinePercentages }, // Shallow copy
+            hexagonSize: parseInt(hexagonSizeSlider.value, 10),
+            presetValue: presetSelect.value
+        };
+        localStorage.setItem(OMNI_INDEX_STATE_KEY, JSON.stringify(state));
+        console.log('Omni Index state saved:', state);
+    }
 
-        redrawGridAndUpdateControls(defaultHexRadius, true); 
+    function loadOmniIndexState() {
+        const savedStateString = localStorage.getItem(OMNI_INDEX_STATE_KEY);
+        if (savedStateString) {
+            try {
+                const savedState = JSON.parse(savedStateString);
+                console.log('Omni Index state loaded:', savedState);
+
+                currentGlobalLineColor = savedState.currentGlobalLineColor || '#000000';
+                currentGlobalLineWeight = savedState.currentGlobalLineWeight || 1;
+                isLineColorLocked = savedState.isLineColorLocked || false;
+                isLineWeightLocked = savedState.isLineWeightLocked || false;
+                currentActiveTabId = savedState.currentActiveTabId || 'bars';
+                Object.assign(currentLinePercentages, savedState.currentLinePercentages);
+                
+                hexagonSizeSlider.value = savedState.hexagonSize || defaultHexRadius;
+                hexagonSizeValueDisplay.textContent = hexagonSizeSlider.value;
+                
+                globalLineColorSelect.value = currentGlobalLineColor;
+                lockLineColorCheckbox.checked = isLineColorLocked;
+                globalLineWeightSlider.value = currentGlobalLineWeight;
+                globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
+                lockLineWeightCheckbox.checked = isLineWeightLocked;
+                presetSelect.value = savedState.presetValue || 'none';
+
+                // Activate the correct tab
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabPanes.forEach(pane => pane.classList.remove('active'));
+                const tabToActivate = document.querySelector(`.tab-button[data-tab="${currentActiveTabId}"]`);
+                if (tabToActivate) tabToActivate.classList.add('active');
+                const paneToActivate = document.getElementById(currentActiveTabId);
+                if (paneToActivate) paneToActivate.classList.add('active');
+                
+                // Redraw grid and repopulate controls with loaded state
+                redrawGridAndUpdateControls(parseInt(hexagonSizeSlider.value, 10), true); // true to preserve loaded lengths
+                return true;
+            } catch (e) {
+                console.error('Error loading Omni Index state:', e);
+                // Fallback to default initialization if loading fails
+            }
+        }
+        return false; // No state loaded or error occurred
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!loadOmniIndexState()) {
+            // Default initialization if no state was loaded
+            hexagonSizeSlider.value = defaultHexRadius; 
+            hexagonSizeValueDisplay.textContent = defaultHexRadius;
+            BASE_LINE_IDS.forEach(id => currentLinePercentages[id] = 100); // Reset percentages
+            globalLineColorSelect.value = currentGlobalLineColor; // Default color
+            globalLineWeightSlider.value = currentGlobalLineWeight; // Default weight
+            globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
+            lockLineColorCheckbox.checked = isLineColorLocked;
+            lockLineWeightCheckbox.checked = isLineWeightLocked;
+            presetSelect.value = 'none';
+            // Ensure default tab ('bars') is active
+            document.querySelector('.tab-button[data-tab="bars"]')?.classList.add('active');
+            document.getElementById('bars')?.classList.add('active');
+            redrawGridAndUpdateControls(defaultHexRadius, false); // false to reset lengths to 100%
+        }
 
         hexagonSizeSlider.addEventListener('input', function() {
             const newRadius = parseInt(this.value);
@@ -498,7 +566,6 @@
             updateGlobalLineColor(currentGlobalLineColor);
             if (presetSelect.value !== "none") presetSelect.value = "none";
         });
-        globalLineColorSelect.value = currentGlobalLineColor; 
 
         lockLineColorCheckbox.addEventListener('change', function() {
             isLineColorLocked = this.checked;
@@ -510,8 +577,6 @@
             updateGlobalLineWeight(currentGlobalLineWeight);
             if (presetSelect.value !== "none") presetSelect.value = "none";
         });
-        globalLineWeightSlider.value = currentGlobalLineWeight;
-        globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
 
         lockLineWeightCheckbox.addEventListener('change', function() {
             isLineWeightLocked = this.checked;
@@ -520,6 +585,30 @@
         presetSelect.addEventListener('change', function() {
             applyPreset(this.value);
         });
+
+        // Add event listeners to save state before navigating
+        const manipulatorLink = document.querySelector('a[href="manipulator.html"]');
+        if (manipulatorLink) {
+            manipulatorLink.addEventListener('click', saveOmniIndexState);
+        }
+
+        const manipulator02Link = document.getElementById('manipulator02Link');
+        if (manipulator02Link) {
+            manipulator02Link.addEventListener('click', function() {
+                saveOmniIndexState(); // Save index state first
+                const m2TransferSettings = {
+                    omniLinePercentages: { ...currentLinePercentages }, // Pass current line states from index.html
+                    globalColor: currentGlobalLineColor,
+                    backgroundColor: '#FFFFFF', // M2 default background
+                    // Apply index.html's global line weight to all manipulator line thicknesses
+                    blueYThickness: currentGlobalLineWeight,
+                    blueAThickness: currentGlobalLineWeight,
+                    blackThickness: currentGlobalLineWeight,
+                    redThickness: currentGlobalLineWeight
+                };
+                localStorage.setItem('hexagonPattern', JSON.stringify(m2TransferSettings));
+            });
+        }
     });
   </script>
 </body>

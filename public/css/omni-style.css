@@ -260,3 +260,167 @@ select {
 .tab-content .tab-pane.active {
   display: block;
 }
+
+/* Styles from original manipulator.html for M2 */
+h3 { /* Copied from manipulator.html, might need adjustment if global h3 is different */
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.control-group {
+  width: 100%;
+  margin-bottom: 12px;
+  border: 1px solid #B6C0C4;
+  border-radius: 6px;
+  padding: 12px;
+  background-color: #F0F5F7;
+}
+
+.control-item {
+  margin-bottom: 12px;
+}
+
+.control-item:last-child {
+  margin-bottom: 0;
+}
+
+/* .slider-container is already defined, ensure it's compatible or adjust */
+/* input[type="range"] is already defined */
+/* .value-display is already defined, ensure it's compatible or adjust */
+/* select is already defined, ensure it's compatible or adjust */
+/* input[type="number"] is already defined */
+
+.button { /* General button style, ensure it doesn't conflict if .page-toggle-button is more specific */
+  background-color: #000000;
+  color: #F0F5F7;
+  border: 1px solid #B6C0C4;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-bottom: 8px; /* Added from original manipulator button */
+}
+
+.button:hover {
+  background-color: #333;
+}
+
+/* .back-button specific style if needed, but it's hidden in M2 */
+/* .back-button {
+  background-color: #000000;
+  margin-bottom: 15px;
+  width: 100%;
+} */
+
+.visualization-container { /* For M2 */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.visualization-frame { /* For M2 */
+  position: relative;
+  border: 1px solid #B6C0C4;
+  border-radius: 5px;
+  background-color: #FFFFFF;
+  overflow: hidden;
+  transition: width 0.3s, height 0.3s; /* From original manipulator */
+}
+
+/* svg styling is general, ensure it's okay */
+/* svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+} */
+
+.manipulator-container { /* For M2 */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.manipulator-section { /* For M2 */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.manipulator-controls { /* For M2 */
+  background-color: #F0F5F7;
+  border: 1px solid #B6C0C4;
+  border-radius: 6px;
+  padding: 12px;
+  width: 100%;
+  /* display: none; by default, JS handles this */
+}
+
+.manipulator-controls h4 { /* For M2 */
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.manipulator-control-item { /* For M2 */
+  margin-bottom: 12px;
+}
+
+.manipulator-control-item:last-child { /* For M2 */
+  margin-bottom: 0;
+}
+
+.toggle-container { /* For M2 */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle-container input[type="checkbox"] { /* For M2 */
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: #000000;
+}
+
+.sphere-outline { /* For M2 */
+  fill: none;
+  stroke: #666;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  pointer-events: none;
+}
+
+/* Styling for the top navigation in manipulator02.html to match page-toggler */
+.top-navigation {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.top-navigation .nav-button {
+  background-color: #B6C0C4;
+  color: #000000;
+  border: 1px solid #B6C0C4;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none; /* Ensure links look like buttons */
+  transition: background-color 0.3s;
+  margin: 0 5px;
+}
+
+.top-navigation .nav-button.active {
+  background-color: #000000;
+  color: #F0F5F7;
+}
+
+.top-navigation .nav-button:hover:not(.active) {
+  background-color: #ddd;
+}

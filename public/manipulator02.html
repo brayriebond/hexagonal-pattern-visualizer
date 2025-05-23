@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shape Manipulator 02</title>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/omni-style.css">
+</head>
+<body>
+  <div class="control-panel">
+    <div class="top-navigation">
+      <a href="index.html" class="button nav-button">Omni/Index</a>
+      <a href="manipulator.html" class="button nav-button">Manipulator (Old)</a>
+      <a href="manipulator02.html" class="button nav-button active">Manipulator02</a>
+      <!-- Add other manipulator links here if any in the future -->
+    </div>
+    <h2>Shape Manipulator 02</h2>
+    <button class="button back-button" id="backButton" style="display: none;">Back to Pattern Maker Page</button> <!-- Hidden as per new nav -->
+
+    <div class="control-group">
+      <h3>Screen Ratio</h3>
+      <div class="control-item">
+        <label for="screenRatio">Select Ratio:</label>
+        <select id="screenRatio" class="screen-ratio-select">
+          <option value="1:1">1:1 (Square)</option>
+          <option value="3:4">3:4 (Portrait)</option>
+          <option value="4:3">4:3 (Landscape)</option>
+          <option value="2:3">2:3 (Portrait)</option>
+          <option value="3:2">3:2 (Landscape)</option>
+          <option value="9:16">9:16 (Portrait)</option>
+          <option value="16:9">16:9 (Landscape)</option>
+          <option value="1:3">1:3 (Tall Portrait)</option>
+          <option value="3:1">3:1 (Wide Landscape)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <h3>Pattern Size</h3>
+      <div class="control-item">
+        <div class="slider-container">
+          <label for="hexCount">Hexagons Wide:</label>
+          <input type="number" id="hexCount" min="1" max="100" value="5"> <!-- Default to 5 -->
+          <span class="value-display">hexagons</span>
+        </div>
+      </div>
+      <div class="control-item">
+        <button class="button" id="exportButton" style="width: 100%;">Export as SVG</button>
+      </div>
+    </div>
+
+    <div class="control-group manipulator-buttons">
+      <h3>Manipulators</h3>
+      <div class="manipulator-container">
+        <div class="manipulator-section">
+          <div class="control-item">
+            <button class="button" id="globeCleanButton" style="background-color: #0BC5BA;">Globe</button>
+          </div>
+        </div>
+
+        <div id="globeCleanControls" class="manipulator-controls" style="display: block;">
+          <h4>Globe Settings</h4>
+          <div class="manipulator-control-item toggle-container">
+            <label for="cleanSphereOutlineToggle">Sphere Outline:</label>
+            <input type="checkbox" id="cleanSphereOutlineToggle" checked>
+          </div>
+          <div class="manipulator-control-item">
+            <label for="cleanSphereDiameter">Sphere Diameter: <span id="cleanSphereDiameterValue">75</span>%</label>
+            <div class="slider-container">
+              <input type="range" id="cleanSphereDiameter" min="10" max="300" value="75"> <!-- Default to 75% -->
+            </div>
+          </div>
+          <div class="manipulator-control-item">
+            <label for="cleanWrapIntensity">Wrap Intensity: <span id="cleanWrapIntensityValue">100</span>%</label>
+            <div class="slider-container">
+              <input type="range" id="cleanWrapIntensity" min="0" max="100" value="100"> <!-- Default to 100% -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="visualization-panel">
+    <div class="visualization-container">
+      <div class="visualization-frame" id="visualizationFrame">
+        <svg id="hexagonSvg" viewBox="0 0 800 600">
+          <!-- Hexagon grid will be drawn here -->
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration
+    const baseHexRadius = 60; // Base reference radius from the pattern maker
+    let hexRadius; // Will be calculated based on hexCount and viewport
+    const corners = 6;
+    let aspectRatio = { width: 1, height: 1 }; // Default 1:1 ratio
+
+    // Line width scaling
+    let lineWidthScale = 1; // Will adjust to maintain consistent line width ratios
+
+    // Globe manipulator configuration
+    let globeCleanActive = true; // Default to active for M2
+    let cleanSphereOutlineVisible = true;
+    let cleanSphereDiameter = 75; // Default to 75% for M2
+    let cleanWrapIntensity = 100; // Default to 100% for M2
+
+    // Pattern storage
+    let patternSettings = {
+      omniLinePercentages: {}, // Will store percentages for each BASE_LINE_ID
+      globalColor: '#0BC5BA',
+      backgroundColor: '#FFFFFF',
+      // Thicknesses will be set from index.html's global line weight
+      // For simplicity in M2, we can initially apply one of these to all lines,
+      // e.g., blackThickness, or define a new globalThickness property.
+      // Let's assume index.html passes blueYThickness, blueAThickness, blackThickness, redThickness
+      // and M2 will use blackThickness for all its lines for now.
+      blueYThickness: 1.5, 
+      blueAThickness: 1.5,
+      blackThickness: 1.5, // This will be the primary thickness used in M2
+      redThickness: 1.5 
+    };
+
+    // BASE_LINE_IDS from omniHexagon.js
+    const BASE_LINE_IDS = [
+        "border-p12-p2", "border-p2-p4", "border-p4-p6", "border-p6-p8", "border-p8-p10", "border-p10-p12",
+        "spoke-c-p1", "spoke-c-p3", "spoke-c-p5", "spoke-c-p7", "spoke-c-p9", "spoke-c-p11",
+        "spoke-c-p2", "spoke-c-p4", "spoke-c-p6", "spoke-c-p8", "spoke-c-p10", "spoke-c-p12"
+    ];
+    const SVG_NS = "http://www.w3.org/2000/svg"; // Add SVG namespace
+    const originalLineData = new Map(); // To store original line coords for length adjustments
+
+    // DOM Elements
+    const svg = document.getElementById('hexagonSvg');
+    const frame = document.getElementById('visualizationFrame');
+    const hexCountInput = document.getElementById('hexCount');
+    const ratioSelect = document.getElementById('screenRatio');
+    const backButton = document.getElementById('backButton'); // Still used for localStorage saving
+
+    // Line elements arrays - will now be a single array of all lines
+    let allDrawnLines = []; // Will store objects { element, baseId, originalP1, originalP2 }
+
+    const INDEX_TO_M2_STORAGE_KEY = 'hexagonPattern'; // Key used by index.html to pass settings
+    const M2_OWN_STATE_KEY = 'manipulator02PatternState'; // Key for M2 to save/load its own state
+
+    function loadPatternSettings() {
+      const fromIndexString = localStorage.getItem(INDEX_TO_M2_STORAGE_KEY);
+      let settingsApplied = false;
+
+      if (fromIndexString) {
+        console.log('Settings found from index.html (hexagonPattern)');
+        try {
+          const fromIndexSettings = JSON.parse(fromIndexString);
+          
+          patternSettings.globalColor = fromIndexSettings.globalColor || patternSettings.globalColor;
+          patternSettings.backgroundColor = fromIndexSettings.backgroundColor || patternSettings.backgroundColor;
+          // All lines in M2 will use blackThickness for now, which is set by index.html's globalLineWeight
+          patternSettings.blackThickness = fromIndexSettings.blackThickness || patternSettings.blackThickness;
+          // Store the detailed percentages directly
+          if (fromIndexSettings.omniLinePercentages) {
+            patternSettings.omniLinePercentages = { ...fromIndexSettings.omniLinePercentages };
+          } else { // Fallback: all lines 100%
+            BASE_LINE_IDS.forEach(id => patternSettings.omniLinePercentages[id] = 100);
+          }
+          
+          console.log('Applied settings from index.html:', patternSettings);
+          localStorage.removeItem(INDEX_TO_M2_STORAGE_KEY); 
+          settingsApplied = true;
+        } catch (e) {
+          console.error('Error parsing settings from index.html (hexagonPattern):', e);
+          localStorage.removeItem(INDEX_TO_M2_STORAGE_KEY); // Clean up corrupted key
+        }
+      } else {
+        // Not coming from index.html, try to load M2's own saved state
+        const m2OwnStateString = localStorage.getItem(M2_OWN_STATE_KEY);
+        if (m2OwnStateString) {
+          console.log('Loading M2 own saved state (manipulator02PatternState)');
+          try {
+            const m2OwnSettings = JSON.parse(m2OwnStateString);
+            patternSettings = { ...patternSettings, ...m2OwnSettings.patternSettings }; // Restore full patternSettings
+            // Restore other M2 specific UI states from its own saved state
+            hexCountInput.value = m2OwnSettings.hexCount || 5; // hexCount is UI, not in patternSettings
+            cleanSphereDiameter = m2OwnSettings.cleanSphereDiameter || 75; // UI state
+            cleanWrapIntensity = m2OwnSettings.cleanWrapIntensity || 100; // UI state
+            globeCleanActive = m2OwnSettings.globeCleanActive !== undefined ? m2OwnSettings.globeCleanActive : true; // UI state
+            cleanSphereOutlineVisible = m2OwnSettings.cleanSphereOutlineVisible !== undefined ? m2OwnSettings.cleanSphereOutlineVisible : true; // UI state
+            aspectRatio = m2OwnSettings.aspectRatio || { width: 1, height: 1 }; // UI state
+            ratioSelect.value = `${aspectRatio.width}:${aspectRatio.height}`; // Update UI
+
+            settingsApplied = true;
+            console.log('Applied M2 own saved state.');
+            // patternSettings.omniLinePercentages would have been loaded from m2OwnSettings.patternSettings
+          } catch (e) {
+            console.error('Error parsing M2 own saved state (manipulator02PatternState):', e);
+          }
+        }
+      }
+
+      // Regardless of where settings came from (or if none came),
+      // ALWAYS apply M2's specific operational requirements when it loads.
+      // If coming from index, these might override parts of what was loaded if there's a conflict,
+      // or set them if they weren't in the 'hexagonPattern' object.
+      // If loading M2's own state, these ensure M2 starts with these key parameters.
+      // If no settings loaded, these are the defaults.
+
+      hexCountInput.value = settingsApplied ? (hexCountInput.value || 5) : 5; // Prioritize loaded if available, else 5
+      
+      // For sphere diameter and wrap intensity, if we are coming from index.html,
+      // the requirement is to set them to 75% and 100% respectively.
+      // If loading M2's own state, we use what was saved.
+      // If nothing loaded, use M2 defaults.
+      if (fromIndexString) { // Coming from index.html
+        cleanSphereDiameter = 75;
+        cleanWrapIntensity = 100;
+        globeCleanActive = true;
+      } else if (!settingsApplied) { // No settings loaded at all
+        cleanSphereDiameter = 75;
+        cleanWrapIntensity = 100;
+        globeCleanActive = true;
+      }
+      // If settingsApplied is true but fromIndexString is false, it means M2's own state was loaded,
+      // so cleanSphereDiameter, cleanWrapIntensity, globeCleanActive would have been set from m2OwnSettings if they existed there.
+
+      // Update UI elements based on the final determined values
+      // hexCountInput is already updated if m2OwnSettings were loaded.
+      document.getElementById('cleanSphereDiameter').value = cleanSphereDiameter; 
+      document.getElementById('cleanSphereDiameterValue').textContent = cleanSphereDiameter;
+      document.getElementById('cleanWrapIntensity').value = cleanWrapIntensity;
+      document.getElementById('cleanWrapIntensityValue').textContent = cleanWrapIntensity;
+      document.getElementById('cleanSphereOutlineToggle').checked = cleanSphereOutlineVisible;
+
+      if (globeCleanActive) {
+        document.getElementById('globeCleanButton').style.backgroundColor = '#0BC5BA';
+        document.getElementById('globeCleanControls').style.display = 'block';
+      } else {
+        document.getElementById('globeCleanButton').style.backgroundColor = ''; // Default/inactive style
+        document.getElementById('globeCleanControls').style.display = 'none';
+      }
+      
+      console.log('Final patternSettings after load and M2 defaults:', patternSettings);
+      console.log(`Final M2 params: hexCount=${hexCountInput.value}, diam=${cleanSphereDiameter}, wrap=${cleanWrapIntensity}, globeActive=${globeCleanActive}`);
+      
+      // Explicitly call for redraw after all settings are finalized.
+      updateVisualizationFrame(); // This will call initVisualization()
+      applyGlobeCleanWrapping();  // Apply globe effects with final params
+
+      return settingsApplied;
+    }
+
+    function saveM2State() {
+      const currentState = {
+        patternSettings: patternSettings,
+        hexCount: parseInt(hexCountInput.value, 10),
+        cleanSphereDiameter: cleanSphereDiameter,
+        cleanWrapIntensity: cleanWrapIntensity,
+        globeCleanActive: globeCleanActive,
+        cleanSphereOutlineVisible: cleanSphereOutlineVisible,
+        aspectRatio: aspectRatio // Save current aspect ratio
+      };
+      localStorage.setItem(M2_OWN_STATE_KEY, JSON.stringify(currentState));
+      console.log('M2 state saved to manipulator02PatternState.');
+    }
+
+    // Helper to get point on circle, similar to omniHexagon.js
+    function getPointOnCircle(cx, cy, radius, angleDegrees) {
+        const angleRadians = (angleDegrees - 90) * Math.PI / 180;
+        return {
+            x: cx + radius * Math.cos(angleRadians),
+            y: cy + radius * Math.sin(angleRadians)
+        };
+    }
+
+    // Calculate distance between two points
+    function distance(p1, p2) {
+      return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+    }
+
+    // Calculate point at a certain ratio along a line from start to end
+    function getPointAlongLineRatio(start, end, ratio) {
+      return {
+        x: start.x + (end.x - start.x) * ratio,
+        y: start.y + (end.y - start.y) * ratio
+      };
+    }
+
+    // Create a single hexagon, drawing lines based on BASE_LINE_IDS
+    function createHexagonLines(hexCenterX, hexCenterY, radius, uniqueHexIdPrefix) {
+        const cornerRadius = radius;
+        const edgeMidpointRadius = radius * (Math.sqrt(3) / 2);
+
+        const p12 = getPointOnCircle(hexCenterX, hexCenterY, cornerRadius, 0);
+        const p2 = getPointOnCircle(hexCenterX, hexCenterY, cornerRadius, 60);
+        const p4 = getPointOnCircle(hexCenterX, hexCenterY, cornerRadius, 120);
+        const p6 = getPointOnCircle(hexCenterX, hexCenterY, cornerRadius, 180);
+        const p8 = getPointOnCircle(hexCenterX, hexCenterY, cornerRadius, 240);
+        const p10 = getPointOnCircle(hexCenterX, hexCenterY, cornerRadius, 300);
+        const corners = { p12, p2, p4, p6, p8, p10 };
+
+        const p1 = getPointOnCircle(hexCenterX, hexCenterY, edgeMidpointRadius, 30);
+        const p3 = getPointOnCircle(hexCenterX, hexCenterY, edgeMidpointRadius, 90);
+        const p5 = getPointOnCircle(hexCenterX, hexCenterY, edgeMidpointRadius, 150);
+        const p7 = getPointOnCircle(hexCenterX, hexCenterY, edgeMidpointRadius, 210);
+        const p9 = getPointOnCircle(hexCenterX, hexCenterY, edgeMidpointRadius, 270);
+        const p11 = getPointOnCircle(hexCenterX, hexCenterY, edgeMidpointRadius, 330);
+        const edges = { p1, p3, p5, p7, p9, p11 };
+        
+        const center = { x: hexCenterX, y: hexCenterY };
+
+        const currentHexLines = [];
+
+        BASE_LINE_IDS.forEach((baseId) => {
+            let p_1, p_2;
+            const parts = baseId.split('-'); // e.g., "border-p12-p2" or "spoke-c-p1"
+            
+            if (parts[0] === "border") {
+                p_1 = corners[parts[1]];
+                p_2 = corners[parts[2]];
+            } else if (parts[0] === "spoke" && parts[1] === "c") {
+                p_1 = center;
+                p_2 = edges[parts[2]] || corners[parts[2]]; // Check edges first, then corners
+            }
+
+            if (p_1 && p_2) {
+                const uniqueLineId = `${uniqueHexIdPrefix}-${baseId}`;
+                const line = document.createElementNS(SVG_NS, "line");
+                line.setAttribute("x1", p_1.x);
+                line.setAttribute("y1", p_1.y);
+                line.setAttribute("x2", p_2.x);
+                line.setAttribute("y2", p_2.y);
+                line.setAttribute("id", uniqueLineId);
+                line.setAttribute("stroke", patternSettings.globalColor);
+                // Apply scaled thickness. Using blackThickness as the 'global' thickness from index.html
+                const scaledThickness = (patternSettings.blackThickness || 1.5) * lineWidthScale;
+                line.setAttribute("stroke-width", scaledThickness);
+                line.setAttribute("stroke-opacity", "1"); // Default to visible, length will hide if 0%
+
+                originalLineData.set(uniqueLineId, { 
+                    originalP1: { ...p_1 }, 
+                    originalP2: { ...p_2 },
+                    baseId: baseId 
+                });
+                svg.appendChild(line);
+                currentHexLines.push({ element: line, baseId: baseId, originalP1: { ...p_1 }, originalP2: { ...p_2 } });
+            }
+        });
+        return currentHexLines;
+    }
+    
+    function updateVisualizationFrame() {
+      const container = document.querySelector('.visualization-container');
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+      let frameWidth, frameHeight;
+
+      if (containerWidth / containerHeight > aspectRatio.width / aspectRatio.height) {
+        frameHeight = containerHeight;
+        frameWidth = frameHeight * (aspectRatio.width / aspectRatio.height);
+      } else {
+        frameWidth = containerWidth;
+        frameHeight = frameWidth * (aspectRatio.height / aspectRatio.width);
+      }
+      frame.style.width = `${frameWidth}px`;
+      frame.style.height = `${frameHeight}px`;
+      svg.setAttribute('viewBox', `0 0 ${aspectRatio.width * 100} ${aspectRatio.height * 100}`);
+      initVisualization();
+    }
+
+    function calculateHexagonSizing() {
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const hexagonCount = parseInt(hexCountInput.value, 10);
+      const totalHexagons = hexagonCount + 2; // +2 for bleed
+      hexRadius = viewportWidth / (totalHexagons * Math.sqrt(3));
+      lineWidthScale = hexRadius / baseHexRadius;
+      return {
+        width: hexRadius * Math.sqrt(3) * 2,
+        height: hexRadius * 2,
+        horizontalSpacing: hexRadius * Math.sqrt(3),
+        verticalSpacing: hexRadius * 1.5
+      };
+    }
+
+    function initVisualization() {
+      while (svg.firstChild) {
+        svg.removeChild(svg.firstChild);
+      }
+      allDrawnLines = []; // Clear the main array
+      originalLineData.clear(); // Clear stored original coordinates
+      svg.style.backgroundColor = patternSettings.backgroundColor;
+      const hexDims = calculateHexagonSizing();
+      const viewBox = svg.viewBox.baseVal; // Ensure this is correct
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      const centerX = viewportWidth / 2;
+      const centerY = viewportHeight / 2;
+      const hexagonCount = parseInt(hexCountInput.value, 10);
+      const colsEachSide = Math.ceil(hexagonCount / 2) + 1;
+      const rowsEachSide = Math.ceil((viewportHeight / hexDims.verticalSpacing) / 2) + 1;
+
+      const primeHexCenterX = viewBox.width / 2; // Center X within the viewBox
+      const primeHexCenterY = viewBox.height / 2; // Center Y within the viewBox
+
+      for (let gridR = -rowsEachSide; gridR <= rowsEachSide; gridR++) {
+        for (let gridC = -colsEachSide; gridC <= colsEachSide; gridC++) {
+            let currentHexCenterX = primeHexCenterX + gridC * hexDims.horizontalSpacing;
+            const currentHexCenterY = primeHexCenterY + gridR * hexDims.verticalSpacing;
+
+            if (gridR % 2 !== 0) { // Offset for odd rows
+                currentHexCenterX += hexDims.horizontalSpacing / 2;
+            }
+            const hexIdPrefix = `hex-${gridR}-${gridC}`;
+            allDrawnLines.push(...createHexagonLines(currentHexCenterX, currentHexCenterY, hexRadius, hexIdPrefix));
+        }
+      }
+      updateLineLengthsAndVisibility(); // New function to apply omniLinePercentages
+    }
+
+    function updateLineLengthsAndVisibility() {
+        originalLineData.forEach((data, uniqueLineId) => {
+            const lineElement = document.getElementById(uniqueLineId);
+            if (!lineElement) return;
+
+            const { originalP1, originalP2, baseId } = data;
+            const percentage = patternSettings.omniLinePercentages[baseId] !== undefined ? patternSettings.omniLinePercentages[baseId] : 100;
+            const scale = percentage / 100;
+
+            if (scale === 0) {
+                const midX = (originalP1.x + originalP2.x) / 2;
+                const midY = (originalP1.y + originalP2.y) / 2;
+                lineElement.setAttribute("x1", midX);
+                lineElement.setAttribute("y1", midY);
+                lineElement.setAttribute("x2", midX);
+                lineElement.setAttribute("y2", midY);
+                lineElement.setAttribute("stroke-opacity", "0");
+            } else {
+                const gapRatioToCut = (1 - scale) / 2; // Ratio of the segment to cut from each end
+                const newP1 = getPointAlongLineRatio(originalP1, originalP2, gapRatioToCut);
+                const newP2 = getPointAlongLineRatio(originalP2, originalP1, gapRatioToCut);
+                lineElement.setAttribute("x1", newP1.x);
+                lineElement.setAttribute("y1", newP1.y);
+                lineElement.setAttribute("x2", newP2.x);
+                lineElement.setAttribute("y2", newP2.y);
+                lineElement.setAttribute("stroke-opacity", "1");
+            }
+        });
+    }
+    
+    function parseRatio(ratioStr) {
+      const parts = ratioStr.split(':');
+      return { width: parseInt(parts[0], 10), height: parseInt(parts[1], 10) };
+    }
+
+    function drawCleanSphereOutline() {
+      const existingOutline = svg.querySelector('.sphere-outline');
+      if (existingOutline) existingOutline.remove();
+      if (!globeCleanActive || !cleanSphereOutlineVisible) return;
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      const centerX = viewportWidth / 2;
+      const centerY = viewportHeight / 2;
+      const minDimension = Math.min(viewportWidth, viewportHeight);
+      const sphereRadius = (minDimension / 2) * (cleanSphereDiameter / 100);
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', centerX);
+      circle.setAttribute('cy', centerY);
+      circle.setAttribute('r', sphereRadius);
+      circle.setAttribute('class', 'sphere-outline');
+      circle.style.fill = 'none'; // Ensure style is applied if not in CSS
+      circle.style.stroke = '#666';
+      circle.style.strokeWidth = '1';
+      circle.style.strokeDasharray = '4 4';
+      circle.style.pointerEvents = 'none';
+      svg.appendChild(circle);
+    }
+
+    function applyGlobeCleanWrapping() {
+      if (!globeCleanActive) {
+        updateLineLengthsAndVisibility(); // Apply current lengths/visibilities
+        const existingOutline = svg.querySelector('.sphere-outline');
+        if (existingOutline) existingOutline.remove();
+        return;
+      }
+      const viewBox = svg.viewBox.baseVal;
+      const viewportWidth = viewBox.width;
+      const viewportHeight = viewBox.height;
+      const centerX = viewportWidth / 2;
+      const centerY = viewportHeight / 2;
+      const minDimension = Math.min(viewportWidth, viewportHeight);
+      const sphereRadius = (minDimension / 2) * (cleanSphereDiameter / 100);
+
+      if (cleanWrapIntensity === 0) {
+        updateLineLengthsAndVisibility(); // Ensure lines are at their correct base lengths first
+        
+        allDrawnLines.forEach(lineInfo => {
+          const lineElement = lineInfo.element;
+          // Get current endpoints after updateLineLengthsAndVisibility
+          const p1 = { x: parseFloat(lineElement.getAttribute('x1')), y: parseFloat(lineElement.getAttribute('y1')) };
+          const p2 = { x: parseFloat(lineElement.getAttribute('x2')), y: parseFloat(lineElement.getAttribute('y2')) };
+          
+          const d1 = distance(p1, {x: centerX, y: centerY});
+          const d2 = distance(p2, {x: centerX, y: centerY});
+          const baseId = lineInfo.baseId;
+          const percentage = patternSettings.omniLinePercentages[baseId] !== undefined ? patternSettings.omniLinePercentages[baseId] : 100;
+
+          if (percentage === 0) {
+            lineElement.setAttribute('stroke-opacity', '0');
+            return;
+          }
+
+          if (d1 <= sphereRadius && d2 <= sphereRadius) {
+            lineElement.setAttribute('stroke-opacity', '1');
+          } else if (d1 > sphereRadius && d2 > sphereRadius) {
+            lineElement.setAttribute('stroke-opacity', '0');
+          } else { 
+            const insidePoint = d1 <= sphereRadius ? p1 : p2;
+            const outsidePoint = d1 <= sphereRadius ? p2 : p1;
+            const dx = outsidePoint.x - insidePoint.x;
+            const dy = outsidePoint.y - insidePoint.y;
+            const cx_line = insidePoint.x - centerX; // Renamed to avoid conflict with global centerX
+            const cy_line = insidePoint.y - centerY; // Renamed to avoid conflict with global centerY
+            const a_quad = dx * dx + dy * dy;
+            const b_quad = cx_line * dx + cy_line * dy; 
+            const c_quad_val = cx_line * cx_line + cy_line * cy_line - sphereRadius * sphereRadius;
+            const discriminant = b_quad * b_quad - a_quad * c_quad_val;
+
+            if (discriminant >= 0) {
+              const t = (-b_quad + Math.sqrt(discriminant)) / a_quad;
+              if (t >= 0 && t <= 1) {
+                const intersectionX = insidePoint.x + t * dx;
+                const intersectionY = insidePoint.y + t * dy;
+                if (d1 <= sphereRadius) {
+                  lineElement.setAttribute('x2', intersectionX);
+                  lineElement.setAttribute('y2', intersectionY);
+                } else {
+                  lineElement.setAttribute('x1', intersectionX);
+                  lineElement.setAttribute('y1', intersectionY);
+                  lineElement.setAttribute('x2', insidePoint.x); 
+                  lineElement.setAttribute('y2', insidePoint.y);
+                }
+                lineElement.setAttribute('stroke-opacity', '1');
+              } else {
+                lineElement.setAttribute('stroke-opacity', '0');
+              }
+            } else {
+              lineElement.setAttribute('stroke-opacity', '0');
+            }
+          }
+        });
+        drawCleanSphereOutline();
+        return;
+      }
+
+      // For wrapIntensity > 0
+      function projectOntoSphere(point) {
+        const dx = point.x - centerX; 
+        const dy = point.y - centerY;
+        const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+        const normalizedDistance = distanceFromCenter / sphereRadius;
+        if (normalizedDistance > 1) return { x: centerX, y: centerY, hidden: true };
+        const nx = dx / sphereRadius;
+        const ny = dy / sphereRadius;
+        const wrapFactor = cleanWrapIntensity / 100;
+        const frontalness = 1 - (nx * nx + ny * ny);
+        if (wrapFactor >= 0.8) {
+          const visibilityThreshold = 0.01 * (wrapFactor <= 0.9 ? 1 : 0);
+          if (frontalness < visibilityThreshold) return { x: centerX, y: centerY, hidden: true };
+        }
+        const nz = Math.sqrt(Math.max(0, frontalness)) * wrapFactor; // Ensure frontalness is not negative
+        const scale = 1 / (1 - nz * 0.5);
+        return { x: centerX + dx * scale, y: centerY + dy * scale, hidden: false };
+      }
+
+      allDrawnLines.forEach(lineInfo => {
+        const lineElement = lineInfo.element;
+        const data = originalLineData.get(lineElement.id); // Get original points from map
+        if (!data) return;
+
+        const { originalP1, originalP2, baseId } = data;
+        const percentage = patternSettings.omniLinePercentages[baseId] !== undefined ? patternSettings.omniLinePercentages[baseId] : 100;
+        
+        if (percentage === 0) {
+            lineElement.setAttribute('stroke-opacity', '0');
+            return;
+        }
+
+        const scale = percentage / 100;
+        const gapRatioToCut = (1 - scale) / 2;
+        const startPoint = getPointAlongLineRatio(originalP1, originalP2, gapRatioToCut);
+        const endPoint = getPointAlongLineRatio(originalP2, originalP1, gapRatioToCut);
+
+        const projectedVisibleStart = projectOntoSphere(startPoint);
+        const projectedVisibleEnd = projectOntoSphere(endPoint);
+
+        if (projectedVisibleStart.hidden || projectedVisibleEnd.hidden) {
+            lineElement.setAttribute('stroke-opacity', '0');
+        } else {
+            lineElement.setAttribute('x1', projectedVisibleStart.x);
+            lineElement.setAttribute('y1', projectedVisibleStart.y);
+            lineElement.setAttribute('x2', projectedVisibleEnd.x);
+            lineElement.setAttribute('y2', projectedVisibleEnd.y);
+            lineElement.setAttribute('stroke-opacity', '1'); 
+        }
+      });
+      drawCleanSphereOutline(); // Redraw outline after projections
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      // loadPatternSettings will now handle the initial rendering calls.
+      // No need to call updateVisualizationFrame or applyGlobeCleanWrapping directly here
+      // if loadPatternSettings does it at the end.
+      loadPatternSettings(); 
+
+      const globeCleanButton = document.getElementById('globeCleanButton');
+      const globeCleanControls = document.getElementById('globeCleanControls');
+      const cleanSphereOutlineToggle = document.getElementById('cleanSphereOutlineToggle');
+      const cleanSphereDiameterSlider = document.getElementById('cleanSphereDiameter');
+      const cleanSphereDiameterValue = document.getElementById('cleanSphereDiameterValue');
+      const cleanWrapIntensitySlider = document.getElementById('cleanWrapIntensity');
+      const cleanWrapIntensityValue = document.getElementById('cleanWrapIntensityValue');
+
+      // Initialize UI from potentially loaded or default values
+      hexCountInput.value = parseInt(hexCountInput.value, 10); // Ensure it's a number from potential string
+      cleanSphereDiameterSlider.value = cleanSphereDiameter;
+      cleanSphereDiameterValue.textContent = cleanSphereDiameter;
+      cleanWrapIntensitySlider.value = cleanWrapIntensity;
+      cleanWrapIntensityValue.textContent = cleanWrapIntensity;
+      cleanSphereOutlineToggle.checked = cleanSphereOutlineVisible;
+      if(globeCleanActive) {
+        globeCleanButton.style.backgroundColor = '#0BC5BA';
+        globeCleanControls.style.display = 'block';
+      } else {
+        globeCleanButton.style.backgroundColor = '';
+        globeCleanControls.style.display = 'none';
+      }
+
+
+      globeCleanButton.addEventListener('click', function() {
+        globeCleanActive = !globeCleanActive;
+        if (globeCleanActive) {
+          globeCleanButton.style.backgroundColor = '#0BC5BA';
+          globeCleanControls.style.display = 'block';
+        } else {
+          globeCleanButton.style.backgroundColor = '';
+          globeCleanControls.style.display = 'none';
+        }
+        applyGlobeCleanWrapping();
+      });
+
+      cleanSphereOutlineToggle.addEventListener('change', function() {
+        cleanSphereOutlineVisible = this.checked;
+        drawCleanSphereOutline();
+      });
+
+      cleanSphereDiameterSlider.addEventListener('input', function() {
+        cleanSphereDiameter = parseInt(this.value, 10);
+        cleanSphereDiameterValue.textContent = cleanSphereDiameter;
+        applyGlobeCleanWrapping();
+      });
+
+      cleanWrapIntensitySlider.addEventListener('input', function() {
+        cleanWrapIntensity = parseInt(this.value, 10);
+        cleanWrapIntensityValue.textContent = cleanWrapIntensity;
+        applyGlobeCleanWrapping();
+      });
+
+      hexCountInput.addEventListener('change', function() {
+        const value = parseInt(this.value, 10);
+        if (value < 1) this.value = 1;
+        else if (value > 100) this.value = 100;
+        initVisualization();
+        if (globeCleanActive) applyGlobeCleanWrapping();
+      });
+
+      ratioSelect.addEventListener('change', function() {
+        aspectRatio = parseRatio(this.value);
+        updateVisualizationFrame();
+        if (globeCleanActive) applyGlobeCleanWrapping();
+      });
+
+      // The original backButton is hidden, but its click logic saves settings.
+      // We need to ensure settings are saved when navigating via new top nav.
+      // For simplicity, we can trigger the save when any of the top nav links are clicked,
+      // except for the active one.
+      document.querySelectorAll('.top-navigation .nav-button').forEach(button => {
+        if (!button.classList.contains('active')) { // Don't save if clicking current page link
+            button.addEventListener('click', () => {
+                saveM2State();
+            });
+        }
+      });
+
+      // The original backButton is hidden, but if it were used, it should also save state.
+      // backButton.addEventListener('click', function() {
+      //   saveM2State();
+      //   window.location.href = 'index.html'; 
+      // });
+
+      const exportButton = document.getElementById('exportButton');
+      exportButton.addEventListener('click', function() {
+        const exportSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        const viewBox = svg.viewBox.baseVal;
+        const backgroundColor = svg.style.backgroundColor || patternSettings.backgroundColor;
+        const viewportWidth = viewBox.width;
+        const viewportHeight = viewBox.height;
+        const centerX = viewportWidth / 2;
+        const centerY = viewportHeight / 2;
+        const minDimension = Math.min(viewportWidth, viewportHeight);
+        const sphereRadius = (minDimension / 2) * (cleanSphereDiameter / 100);
+
+        if (globeCleanActive) {
+          const bufferPercentage = 0.05; // Reduced buffer
+          const bufferSize = sphereRadius * bufferPercentage;
+          const globeLeft = centerX - sphereRadius - bufferSize;
+          const globeTop = centerY - sphereRadius - bufferSize;
+          const globeSize = (sphereRadius + bufferSize) * 2;
+          exportSvg.setAttribute('width', globeSize);
+          exportSvg.setAttribute('height', globeSize);
+          exportSvg.setAttribute('viewBox', `${globeLeft} ${globeTop} ${globeSize} ${globeSize}`);
+        } else {
+          exportSvg.setAttribute('width', viewBox.width);
+          exportSvg.setAttribute('height', viewBox.height);
+          exportSvg.setAttribute('viewBox', `0 0 ${viewBox.width} ${viewBox.height}`);
+        }
+        exportSvg.setAttribute('style', `background-color: ${backgroundColor};`);
+        exportSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+        Array.from(svg.children).forEach(child => {
+          if (!child.classList.contains('sphere-outline')) {
+            if (globeCleanActive && child.tagName === 'line') {
+              const opacity = parseFloat(child.getAttribute('stroke-opacity') || '1');
+              if (opacity > 0) { // Only export visible lines
+                const clonedNode = child.cloneNode(true);
+                exportSvg.appendChild(clonedNode);
+              }
+            } else if (!globeCleanActive) { // If not globe mode, export all non-outline children
+              const clonedNode = child.cloneNode(true);
+              exportSvg.appendChild(clonedNode);
+            }
+          }
+        });
+
+        let svgString = new XMLSerializer().serializeToString(exportSvg);
+        svgString = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' + svgString;
+        const blob = new Blob([svgString], {type: 'image/svg+xml'});
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(blob);
+        const now = new Date();
+        const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
+        let filename = `hexagon-pattern-M2`;
+        if (globeCleanActive) {
+          filename += `_globe-${cleanSphereDiameter}diam-${cleanWrapIntensity}wrap`;
+        }
+        filename += `_${timestamp}.svg`;
+        downloadLink.download = filename;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      });
+
+      aspectRatio = parseRatio(ratioSelect.value); // Set initial aspect ratio from select
+      // updateVisualizationFrame(); // Called by loadPatternSettings
+      // applyGlobeCleanWrapping(); // Called by loadPatternSettings
+
+      window.addEventListener('resize', function() {
+        updateVisualizationFrame();
+        if (globeCleanActive) applyGlobeCleanWrapping();
+      });
+    });
+  </script>
+</body>
+</html>
