@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pattern Animator</title>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/omni-style.css">
+</head>
+<body>
+  <div class="control-panel">
+    <h2>Pattern Animator</h2>
+    
+    <div class="page-toggler">
+      <a href="index.html" id="makerLink" class="page-toggle-button">Maker</a>
+      <a href="manipulator.html" id="manipulatorLink" class="page-toggle-button">Manipulator</a>
+      <a href="animator.html" class="page-toggle-button active">Animator</a>
+    </div>
+
+    <!-- Global Hexagon Size (loaded from Maker/Manipulator state) -->
+    <div class="background-control" style="margin-top: 15px;">
+      <div class="slider-container">
+        <label for="hexagonSizeDisplay" style="min-width: 100px;">Hexagon Size:</label>
+        <span id="hexagonSizeDisplay" class="value-display" style="min-width: 40px; background-color: #333; padding: 5px; border-radius: 3px;">N/A</span>
+      </div>
+    </div>
+    
+    <!-- Current Line Weight (loaded from Maker/Manipulator state) -->
+    <div class="background-control">
+      <div class="slider-container">
+        <label for="lineWeightDisplay" style="min-width: 100px;">Line Weight:</label>
+        <span id="lineWeightDisplay" class="value-display" style="min-width: 40px; background-color: #333; padding: 5px; border-radius: 3px;">N/A</span>
+      </div>
+    </div>
+
+    <!-- Animation Controls -->
+    <div class="background-control" style="margin-top: 20px;">
+        <h4>Animation Controls</h4>
+        <div class="slider-container">
+            <label for="animationDurationSlider" style="min-width: 150px;">Transition (X sec):</label>
+            <input type="range" id="animationDurationSlider" min="0.1" max="2" value="0.5" step="0.1">
+            <span id="animationDurationValue" class="value-display" style="min-width: 40px;">0.5s</span>
+        </div>
+        <div class="slider-container" style="margin-top: 10px;">
+            <label for="stageHoldSlider" style="min-width: 150px;">Hold (Y sec):</label>
+            <input type="range" id="stageHoldSlider" min="0.1" max="2" value="0.5" step="0.1">
+            <span id="stageHoldValue" class="value-display" style="min-width: 40px;">0.5s</span>
+        </div>
+        <div class="slider-container" style="margin-top: 10px;">
+            <label for="randomStagesSlider" style="min-width: 150px;">Random Stages (Z):</label>
+            <input type="range" id="randomStagesSlider" min="2" max="10" value="3" step="1">
+            <span id="randomStagesValue" class="value-display" style="min-width: 40px;">3</span>
+        </div>
+        <button id="startAnimationButton" class="randomize-button" style="width: 100%; margin-top: 20px;">Start Animation</button>
+    </div>
+
+  </div>
+  
+  <div class="visualization-panel">
+    <svg id="omniVisualizationSvg" width="100%" height="100%" viewBox="-400 -300 800 600" style="max-width: 800px; max-height: 600px;"></svg>
+  </div>
+  
+  <script type="module">
+    import { drawHexagonGrid, updateLineLength, BASE_LINE_IDS, updateGlobalLineColor, updateGlobalLineWeight, getLineColor, getLineWeight } from './js/omniHexagon.js';
+
+    const OMNI_INDEX_STATE_KEY = 'omniIndexState'; // Key to load initial state from Maker
+    const defaultHexRadius = 80;
+    const viewBoxData = { x: -400, y: -300, width: 800, height: 600 };
+    const svgContainer = document.getElementById('omniVisualizationSvg');
+    
+    const hexagonSizeDisplay = document.getElementById('hexagonSizeDisplay');
+    const lineWeightDisplay = document.getElementById('lineWeightDisplay');
+
+    const animationDurationSlider = document.getElementById('animationDurationSlider');
+    const animationDurationValue = document.getElementById('animationDurationValue');
+    const stageHoldSlider = document.getElementById('stageHoldSlider');
+    const stageHoldValue = document.getElementById('stageHoldValue');
+    const randomStagesSlider = document.getElementById('randomStagesSlider');
+    const randomStagesValue = document.getElementById('randomStagesValue');
+    const startAnimationButton = document.getElementById('startAnimationButton');
+
+    let initialGridState = null; // To store the loaded line percentages, color, weight, and activeTab
+    let currentHexRadius = defaultHexRadius;
+    let lockedLineWeight = 1; // Line weight is locked during animation
+    let animationInterval = null;
+    let isAnimating = false;
+
+    const percentageMap = [0, 25, 50, 75, 100]; // For randomizing line lengths
+
+    // Available colors for randomization (excluding black, assuming it's a base/default)
+    const availableColors = [
+        "#0BC5BA", // Egnyte Teal
+        "#FF6640", // AEC Orange
+        "#DA9DFF", // Financial Purple
+        "#359DFF", // LifeSci Blue
+        "#85E961", // Channel Green
+        "#FF51B6"  // Media Pink
+    ];
+
+    function getRandomColor() {
+        return availableColors[Math.floor(Math.random() * availableColors.length)];
+    }
+
+    // Batching setups (mirrored from index.html for logic)
+    const batchedInBarsSetup = {
+        "vertical-spokes": ["spoke-c-p6", "spoke-c-p12"],
+        "horizontal-edge-spokes": ["spoke-c-p3", "spoke-c-p9"],
+        "diagonal-edge-spokes": ["spoke-c-p1", "spoke-c-p5", "spoke-c-p7", "spoke-c-p11"],
+        "diagonal-corner-spokes": ["spoke-c-p2", "spoke-c-p4", "spoke-c-p8", "spoke-c-p10"]
+    };
+    
+    const batchedInStarsSetup = {
+        "y-batch": ["spoke-c-p2", "spoke-c-p6", "spoke-c-p10"],
+        "a-batch": ["spoke-c-p12", "spoke-c-p4", "spoke-c-p8"],
+        "x-batch": ["spoke-c-p3", "spoke-c-p9", "spoke-c-p1", "spoke-c-p5", "spoke-c-p7", "spoke-c-p11"]
+    };
+
+    function getRandomLinePercentages(activeTab) {
+        const randomPercentages = {};
+        const borderLines = BASE_LINE_IDS.filter(id => id.startsWith("border-"));
+        const spokeLines = BASE_LINE_IDS.filter(id => id.startsWith("spoke-"));
+
+        // Initialize all to 0, then fill in
+        BASE_LINE_IDS.forEach(id => randomPercentages[id] = 0); // Default to 0, or could be 100
+
+        // 1. Randomize "ALL BORDERS"
+        const borderPercentage = percentageMap[Math.floor(Math.random() * percentageMap.length)];
+        borderLines.forEach(id => randomPercentages[id] = borderPercentage);
+
+        // 2. Randomize based on active tab's batching schema
+        const relevantBatchSetup = (activeTab === "stars") ? batchedInStarsSetup : batchedInBarsSetup;
+        for (const batchKey in relevantBatchSetup) {
+            const batchPercentageValue = percentageMap[Math.floor(Math.random() * percentageMap.length)];
+            relevantBatchSetup[batchKey].forEach(lineId => {
+                randomPercentages[lineId] = batchPercentageValue;
+            });
+        }
+        
+        // 3. Handle any spokes not covered by batches (if any - current setups cover all)
+        // This loop is more of a safeguard if setups change.
+        spokeLines.forEach(lineId => {
+            if (randomPercentages[lineId] === undefined) { // If not set by a batch
+                 randomPercentages[lineId] = percentageMap[Math.floor(Math.random() * percentageMap.length)];
+            }
+        });
+        return randomPercentages;
+    }
+    
+    // Helper functions for color interpolation
+    function hexToRgb(hex) {
+        let r = 0, g = 0, b = 0;
+        // 3 digits
+        if (hex.length == 4) {
+            r = "0x" + hex[1] + hex[1];
+            g = "0x" + hex[2] + hex[2];
+            b = "0x" + hex[3] + hex[3];
+        // 6 digits
+        } else if (hex.length == 7) {
+            r = "0x" + hex[1] + hex[2];
+            g = "0x" + hex[3] + hex[4];
+            b = "0x" + hex[5] + hex[6];
+        }
+        return { r: +r, g: +g, b: +b };
+    }
+
+    function rgbToHex(r, g, b) {
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+    }
+
+
+    function loadInitialState() {
+        const savedStateString = localStorage.getItem(OMNI_INDEX_STATE_KEY);
+        if (savedStateString) {
+            try {
+                const savedState = JSON.parse(savedStateString);
+                console.log('Animator loading initial state from Maker/Manipulator:', savedState);
+                
+                currentHexRadius = savedState.hexagonSize || defaultHexRadius;
+                lockedLineWeight = savedState.currentGlobalLineWeight || 1;
+                
+                initialGridState = {
+                    percentages: { ...savedState.currentLinePercentages },
+                    color: savedState.currentGlobalLineColor || '#000000',
+                    weight: lockedLineWeight,
+                    activeTab: savedState.currentActiveTabId || 'bars' // To know the batching schema
+                };
+
+                hexagonSizeDisplay.textContent = currentHexRadius;
+                lineWeightDisplay.textContent = lockedLineWeight.toFixed(1);
+                
+                drawHexagonGrid(svgContainer, currentHexRadius, viewBoxData, initialGridState.color, initialGridState.weight);
+                for (const lineId in initialGridState.percentages) {
+                    updateLineLength(lineId, initialGridState.percentages[lineId]);
+                }
+                return true;
+            } catch (e) {
+                console.error('Error loading state for Animator:', e);
+            }
+        } else {
+            console.warn('No initial state found for Animator. Please set a pattern in Maker first.');
+            hexagonSizeDisplay.textContent = 'N/A';
+            lineWeightDisplay.textContent = 'N/A';
+            startAnimationButton.disabled = true;
+            startAnimationButton.textContent = 'Setup Pattern in Maker';
+        }
+        return false;
+    }
+
+    function animateToStage(targetPercentages, targetColor, durationSeconds) {
+        return new Promise(resolve => {
+            const startTime = performance.now();
+            const startPercentages = { ...currentAnimatedState.percentages }; // Use current state as start
+            const startColor = currentAnimatedState.color;
+
+            const startColorRgb = hexToRgb(startColor);
+            const targetColorRgb = hexToRgb(targetColor);
+
+            function animationStep(currentTime) {
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / (durationSeconds * 1000), 1);
+
+                // Interpolate color
+                const r = Math.round(startColorRgb.r + (targetColorRgb.r - startColorRgb.r) * progress);
+                const g = Math.round(startColorRgb.g + (targetColorRgb.g - startColorRgb.g) * progress);
+                const b = Math.round(startColorRgb.b + (targetColorRgb.b - startColorRgb.b) * progress);
+                updateGlobalLineColor(rgbToHex(r, g, b));
+
+                BASE_LINE_IDS.forEach(id => {
+                    const startPercentage = startPercentages[id];
+                    const endPercentage = targetPercentages[id]; // targetPercentages comes from getRandom...
+                    const currentPercentage = startPercentage + (endPercentage - startPercentage) * progress;
+                    updateLineLength(id, currentPercentage);
+                });
+
+                if (progress < 1) {
+                    requestAnimationFrame(animationStep);
+                } else {
+                    // Ensure final state is set for lines and color
+                    BASE_LINE_IDS.forEach(id => {
+                        updateLineLength(id, targetPercentages[id]);
+                    });
+                    updateGlobalLineColor(targetColor); // Ensure final color is set
+                    // Update current animated state
+                    currentAnimatedState = { percentages: { ...targetPercentages }, color: targetColor, weight: lockedLineWeight, activeTab: initialGridState.activeTab };
+                    resolve();
+                }
+            }
+            requestAnimationFrame(animationStep);
+        });
+    }
+    
+    let currentAnimatedState = null; // Stores the current state of the animation (percentages, color, weight)
+
+    async function runAnimationLoop() {
+        if (isAnimating) return;
+        isAnimating = true;
+        startAnimationButton.disabled = true;
+        startAnimationButton.textContent = "Animating...";
+
+        const transitionDuration = parseFloat(animationDurationSlider.value);
+        const holdDuration = parseFloat(stageHoldSlider.value);
+        const numRandomStages = parseInt(randomStagesSlider.value);
+        let stagesCompleted = 0;
+
+        // Ensure the grid is at the initial state before starting
+        // Ensure the grid is at the initial state before starting the loop
+        // currentAnimatedState is critical for the first transition's starting point
+        currentAnimatedState = { 
+            percentages: { ...initialGridState.percentages }, 
+            color: initialGridState.color, 
+            weight: initialGridState.weight,
+            activeTab: initialGridState.activeTab 
+        };
+        updateGlobalLineColor(currentAnimatedState.color);
+        updateGlobalLineWeight(currentAnimatedState.weight);
+        for (const lineId in currentAnimatedState.percentages) {
+            updateLineLength(lineId, currentAnimatedState.percentages[lineId]);
+        }
+        await new Promise(r => setTimeout(r, 100)); // Small delay to ensure rendering
+
+        async function nextStage() {
+            if (stagesCompleted < numRandomStages) {
+                const randomPercentages = getRandomLinePercentages(initialGridState.activeTab);
+                const randomColor = getRandomColor();
+                
+                console.log(`Animating to random stage \${stagesCompleted + 1}`, { percentages: randomPercentages, color: randomColor });
+                await animateToStage(randomPercentages, randomColor, transitionDuration);
+                console.log(`Holding stage \${stagesCompleted + 1}`);
+                await new Promise(r => setTimeout(r, holdDuration * 1000));
+                
+                stagesCompleted++;
+                if (isAnimating) { // Check if animation was stopped
+                    animationInterval = setTimeout(nextStage, 0); // Continue to next stage
+                } else {
+                    resetAnimation();
+                }
+            } else {
+                // Animate back to the initial state
+                console.log("Animating back to initial state.");
+                await animateToStage(initialGridState.percentages, initialGridState.color, transitionDuration);
+                console.log("Animation loop finished. Holding initial state.");
+                // currentAnimatedState is now initialGridState
+                await new Promise(r => setTimeout(r, holdDuration * 1000)); 
+                resetAnimation();
+            }
+        }
+        
+        animationInterval = setTimeout(nextStage, 0); // Start the first stage
+    }
+
+    function stopAnimation() {
+        isAnimating = false;
+        if (animationInterval) {
+            clearTimeout(animationInterval);
+            animationInterval = null;
+        }
+        // Reset to initial state when stopped manually
+        if (initialGridState) {
+            updateGlobalLineColor(initialGridState.color);
+            updateGlobalLineWeight(initialGridState.weight);
+            for (const lineId in initialGridState.percentages) {
+                updateLineLength(lineId, initialGridState.percentages[lineId]);
+            }
+            currentAnimatedState = { 
+                percentages: { ...initialGridState.percentages }, 
+                color: initialGridState.color, 
+                weight: initialGridState.weight,
+                activeTab: initialGridState.activeTab 
+            };
+        }
+        resetAnimation();
+    }
+    
+    function resetAnimation() {
+        isAnimating = false;
+        startAnimationButton.disabled = !initialGridState; // Disable if no initial state
+        startAnimationButton.textContent = initialGridState ? "Start Animation" : "Setup Pattern in Maker";
+        if (animationInterval) {
+            clearTimeout(animationInterval);
+            animationInterval = null;
+        }
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!loadInitialState()) {
+            // Handled in loadInitialState
+        }
+
+        animationDurationSlider.addEventListener('input', function() {
+            animationDurationValue.textContent = parseFloat(this.value).toFixed(1) + 's';
+        });
+        stageHoldSlider.addEventListener('input', function() {
+            stageHoldValue.textContent = parseFloat(this.value).toFixed(1) + 's';
+        });
+        randomStagesSlider.addEventListener('input', function() {
+            randomStagesValue.textContent = this.value;
+        });
+
+        startAnimationButton.addEventListener('click', () => {
+            if (isAnimating) {
+                stopAnimation();
+            } else if (initialGridState) {
+                runAnimationLoop();
+            }
+        });
+        
+        // Ensure makerLink and manipulatorLink exist before adding listeners
+        const makerLink = document.getElementById('makerLink');
+        if (makerLink) {
+            makerLink.addEventListener('click', () => {
+                if (isAnimating) stopAnimation();
+                // No state to save from animator, it's a consumer
+            });
+        }
+        const manipulatorLink = document.getElementById('manipulatorLink');
+        if (manipulatorLink) {
+            manipulatorLink.addEventListener('click', () => {
+                if (isAnimating) stopAnimation();
+                 // No state to save from animator
+            });
+        }
+    });
+  </script>
+</body>
+</html>

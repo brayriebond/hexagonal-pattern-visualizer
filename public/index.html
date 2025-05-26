@@ -13,7 +13,8 @@
     
     <div class="page-toggler">
       <a href="index.html" class="page-toggle-button active">Maker</a>
-      <a href="manipulator04.html" id="manipulator04Link" class="page-toggle-button">Manipulator</a>
+      <a href="manipulator.html" id="manipulatorLink" class="page-toggle-button">Manipulator</a>
+      <a href="animator.html" id="animatorLink" class="page-toggle-button">Animator</a>
     </div>
 
     <!-- Global Hexagon Size Control -->
@@ -66,7 +67,7 @@
       </div>
       <div class="checkbox-container" style="margin-top: 5px;">
         <label for="lockLineWeight">Lock Weight:</label>
-        <input type="checkbox" id="lockLineWeight">
+        <input type="checkbox" id="lockLineWeight" checked>
       </div>
     </div>
 
@@ -89,6 +90,20 @@
       <!-- Test tab content removed -->
     </div>
 
+    <!-- SVG Download Section -->
+    <div class="background-control" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ccc;">
+      <h4 style="margin-bottom: 10px;">SVG Download</h4>
+      <div class="slider-container" style="margin-bottom: 5px;">
+        <label for="hexagonsWideInput" style="min-width: 120px;">Hexagons Wide:</label>
+        <input type="number" id="hexagonsWideInput" value="10" min="1" style="width: 60px; text-align: right; margin-right: 5px;">
+      </div>
+      <div class="slider-container" style="margin-bottom: 10px;">
+        <label for="hexagonsTallInput" style="min-width: 120px;">Hexagons Tall:</label>
+        <input type="number" id="hexagonsTallInput" value="7" min="1" style="width: 60px; text-align: right; margin-right: 5px;">
+      </div>
+      <button id="downloadSvgButton" class="randomize-button" style="width: 100%;">Download SVG</button>
+    </div>
+
   </div>
   
   <div class="visualization-panel">
@@ -101,7 +116,7 @@
     const OMNI_INDEX_STATE_KEY = 'omniIndexState';
     const defaultHexRadius = 80;
     const viewBoxData = { x: -400, y: -300, width: 800, height: 600 };
-    const svgContainer = document.getElementById('omniVisualizationSvg');
+    const svgContainer = document.getElementById('omniVisualizationSvg'); 
     const hexagonSizeSlider = document.getElementById('hexagonSizeSlider');
     const hexagonSizeValueDisplay = document.getElementById('hexagonSizeValue');
     const globalLineColorSelect = document.getElementById('globalLineColorSelect');
@@ -114,8 +129,8 @@
     let currentGlobalLineColor = '#000000'; 
     let currentGlobalLineWeight = 1; 
     let isLineColorLocked = false; 
-    let isLineWeightLocked = false; 
-    let currentActiveTabId = 'bars'; // Default active tab
+    let isLineWeightLocked = true; 
+    let currentActiveTabId = 'bars'; 
 
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabPanes = document.querySelectorAll('.tab-content .tab-pane');
@@ -123,7 +138,7 @@
     const currentLinePercentages = {};
     BASE_LINE_IDS.forEach(id => currentLinePercentages[id] = 100); 
 
-    const percentageMap = [0, 25, 50, 75, 100]; // 0-4 for slider values
+    const percentageMap = [0, 25, 50, 75, 100]; 
 
     const batchedInBarsSetup = {
         "vertical-spokes": ["spoke-c-p6", "spoke-c-p12"],
@@ -166,8 +181,8 @@
             tabButtons.forEach(btn => btn.classList.remove('active'));
             tabPanes.forEach(pane => pane.classList.remove('active'));
             button.classList.add('active');
-            const tabId = button.getAttribute('data-tab');
-            const activePane = document.getElementById(tabId);
+            currentActiveTabId = button.getAttribute('data-tab'); 
+            const activePane = document.getElementById(currentActiveTabId);
             if (activePane) activePane.classList.add('active');
 
             BASE_LINE_IDS.forEach(baseId => {
@@ -307,9 +322,47 @@
             randomizeButton.textContent = 'Randomize Tab Settings';
             randomizeButton.style.width = '100%';
             randomizeButton.style.marginTop = '20px';
-            randomizeButton.addEventListener('click', () => randomizeTabSettings(tabPaneElement.id)); // Attach listener
+            randomizeButton.addEventListener('click', () => randomizeTabSettings(tabPaneElement.id)); 
             tabPaneElement.appendChild(randomizeButton);
+
+            const resetButton = document.createElement('button');
+            resetButton.className = 'reset-defaults-button'; 
+            resetButton.id = `reset-defaults-${tabPaneElement.id}`;
+            resetButton.textContent = 'Reset Tab Settings';
+            resetButton.style.width = '100%';
+            resetButton.style.marginTop = '10px'; 
+            resetButton.addEventListener('click', () => resetTabSettingsToDefaults());
+            tabPaneElement.appendChild(resetButton);
         }
+    }
+
+    function resetTabSettingsToDefaults() {
+        console.log('Resetting tab settings to defaults...');
+        currentGlobalLineColor = '#000000';
+        updateGlobalLineColor(currentGlobalLineColor); 
+        if (globalLineColorSelect) globalLineColorSelect.value = currentGlobalLineColor;
+        if (presetSelect) presetSelect.value = "none";
+        const barsTabButton = document.querySelector('.tab-button[data-tab="bars"]');
+        if (barsTabButton) {
+            if (!barsTabButton.classList.contains('active')) {
+                barsTabButton.click(); 
+            } else {
+                BASE_LINE_IDS.forEach(baseId => {
+                    updateLineLength(baseId, 100);
+                    currentLinePercentages[baseId] = 100;
+                });
+                document.querySelectorAll('input[type="range"][data-base-lineid], input[type="range"][data-batch-type]').forEach(slider => {
+                     updateSliderUI(slider, 100);
+                });
+                if (presetSelect) presetSelect.value = "none";
+            }
+        }
+        currentGlobalLineWeight = 1.0;
+        isLineWeightLocked = true;
+        if (globalLineWeightSlider) globalLineWeightSlider.value = currentGlobalLineWeight;
+        if (globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
+        if (lockLineWeightCheckbox) lockLineWeightCheckbox.checked = isLineWeightLocked;
+        updateGlobalLineWeight(currentGlobalLineWeight); 
     }
 
     function redrawGridAndUpdateControls(radius, preserveLengths = false) {
@@ -317,7 +370,7 @@
             if (!preserveLengths) BASE_LINE_IDS.forEach(id => currentLinePercentages[id] = 100);
             drawHexagonGrid(svgContainer, radius, viewBoxData, currentGlobalLineColor, currentGlobalLineWeight);
             BASE_LINE_IDS.forEach(baseId => updateLineLength(baseId, currentLinePercentages[baseId]));
-            ['stars', 'bars'].forEach(tabId => { // Removed 'test'
+            ['stars', 'bars'].forEach(tabId => { 
                 const tabElement = document.getElementById(tabId);
                 if (tabElement) populateLineControlsForTab(tabElement, BASE_LINE_IDS);
             });
@@ -325,78 +378,34 @@
     }
     
    function applyPreset(presetName) {
-        if (presetName === "none") {
-            return;
-        }
+        if (presetName === "none") return;
         currentGlobalLineWeight = 1.0;
         updateGlobalLineWeight(currentGlobalLineWeight);
         globalLineWeightSlider.value = currentGlobalLineWeight; 
         globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
         isLineWeightLocked = false; lockLineWeightCheckbox.checked = false;
-
-
         const barsTabButton = document.querySelector('.tab-button[data-tab="bars"]');
         let isBarsActive = barsTabButton.classList.contains('active');
         if (barsTabButton && !isBarsActive) barsTabButton.click(); 
-        
         setTimeout(() => {
             const borderLines = BASE_LINE_IDS.filter(id => id.startsWith("border-"));
             setBatchLines(borderLines, 75, document.getElementById(`slider-bars-batch-border`));
             const starsBorderBatchSlider = document.getElementById(`slider-stars-batch-border`);
             if (starsBorderBatchSlider) updateSliderUI(starsBorderBatchSlider, 75);
-
             let colorToApply = currentGlobalLineColor; 
             const targetBarsBatchPercentages = {}; 
             switch (presetName) {
-                case "egnyte":
-                    colorToApply = "#0BC5BA";
-                    targetBarsBatchPercentages["vertical-spokes"] = 75;
-                    targetBarsBatchPercentages["horizontal-edge-spokes"] = 75;
-                    targetBarsBatchPercentages["diagonal-edge-spokes"] = 75;
-                    targetBarsBatchPercentages["diagonal-corner-spokes"] = 75;
-                    break;
-                case "aec":
-                    colorToApply = "#FF6640";
-                    targetBarsBatchPercentages["vertical-spokes"] = 75;
-                    targetBarsBatchPercentages["horizontal-edge-spokes"] = 0;
-                    targetBarsBatchPercentages["diagonal-edge-spokes"] = 0;
-                    targetBarsBatchPercentages["diagonal-corner-spokes"] = 75;
-                    break;
-                case "financial": 
-                    colorToApply = "#DA9DFF";
-                    targetBarsBatchPercentages["vertical-spokes"] = 75;
-                    targetBarsBatchPercentages["horizontal-edge-spokes"] = 75;
-                    targetBarsBatchPercentages["diagonal-edge-spokes"] = 0;
-                    targetBarsBatchPercentages["diagonal-corner-spokes"] = 0;
-                    break;
-                case "lifesciences":
-                    colorToApply = "#359DFF";
-                    targetBarsBatchPercentages["vertical-spokes"] = 0;
-                    targetBarsBatchPercentages["horizontal-edge-spokes"] = 75;
-                    targetBarsBatchPercentages["diagonal-edge-spokes"] = 75;
-                    targetBarsBatchPercentages["diagonal-corner-spokes"] = 0;
-                    break;
-                case "channel": 
-                    colorToApply = "#85E961";
-                    targetBarsBatchPercentages["vertical-spokes"] = 0;
-                    targetBarsBatchPercentages["horizontal-edge-spokes"] = 0;
-                    targetBarsBatchPercentages["diagonal-edge-spokes"] = 0;
-                    targetBarsBatchPercentages["diagonal-corner-spokes"] = 75;
-                    break;
-                case "media": 
-                    colorToApply = "#FF51B6";
-                    targetBarsBatchPercentages["vertical-spokes"] = 0;
-                    targetBarsBatchPercentages["horizontal-edge-spokes"] = 0;
-                    targetBarsBatchPercentages["diagonal-edge-spokes"] = 75;
-                    targetBarsBatchPercentages["diagonal-corner-spokes"] = 0;
-                    break;
+                case "egnyte": colorToApply = "#0BC5BA"; targetBarsBatchPercentages["vertical-spokes"] = 75; targetBarsBatchPercentages["horizontal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-corner-spokes"] = 75; break;
+                case "aec": colorToApply = "#FF6640"; targetBarsBatchPercentages["vertical-spokes"] = 75; targetBarsBatchPercentages["horizontal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-corner-spokes"] = 75; break;
+                case "financial":  colorToApply = "#DA9DFF"; targetBarsBatchPercentages["vertical-spokes"] = 75; targetBarsBatchPercentages["horizontal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-corner-spokes"] = 0; break;
+                case "lifesciences": colorToApply = "#359DFF"; targetBarsBatchPercentages["vertical-spokes"] = 0; targetBarsBatchPercentages["horizontal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-corner-spokes"] = 0; break;
+                case "channel":  colorToApply = "#85E961"; targetBarsBatchPercentages["vertical-spokes"] = 0; targetBarsBatchPercentages["horizontal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-corner-spokes"] = 75; break;
+                case "media":  colorToApply = "#FF51B6"; targetBarsBatchPercentages["vertical-spokes"] = 0; targetBarsBatchPercentages["horizontal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-corner-spokes"] = 0; break;
             }
             currentGlobalLineColor = colorToApply;
             updateGlobalLineColor(currentGlobalLineColor);
             globalLineColorSelect.value = currentGlobalLineColor;
             isLineColorLocked = false; lockLineColorCheckbox.checked = false;
-
-
             for (const batchKey in batchedInBarsSetup) { 
                 if (targetBarsBatchPercentages.hasOwnProperty(batchKey)) {
                     const linesInBatch = batchedInBarsSetup[batchKey];
@@ -409,39 +418,25 @@
     }
 
     const randomPercentageMap = [0, 25, 50, 75];
-    function getRandomPercentage() {
-        return randomPercentageMap[Math.floor(Math.random() * randomPercentageMap.length)];
-    }
+    function getRandomPercentage() { return randomPercentageMap[Math.floor(Math.random() * randomPercentageMap.length)]; }
 
     function randomizeTabSettings(tabId) {
         if (presetSelect.value !== "none") presetSelect.value = "none";
-
         const relevantBatchSetup = (tabId === "stars") ? batchedInStarsSetup : batchedInBarsSetup;
-        
-        // Randomize "ALL BORDERS" for this tab
         const borderPercentage = getRandomPercentage();
         const borderLines = BASE_LINE_IDS.filter(id => id.startsWith("border-"));
         const borderBatchSlider = document.getElementById(`slider-${tabId}-batch-border`);
         setBatchLines(borderLines, borderPercentage, borderBatchSlider);
-
-        // Randomize other batches specific to this tab
         for (const batchKey in relevantBatchSetup) {
             const batchPercentage = getRandomPercentage();
             const linesInBatch = relevantBatchSetup[batchKey];
             const batchSlider = document.getElementById(`slider-${tabId}-batch-${batchKey}`);
             setBatchLines(linesInBatch, batchPercentage, batchSlider);
         }
-        
-        // Randomize remaining individual lines in this tab (if any - Stars tab has them)
         if (tabId === "stars") {
             BASE_LINE_IDS.forEach(baseLineId => {
                 let isBatched = baseLineId.startsWith("border-");
-                for (const batchKey in batchedInStarsSetup) {
-                    if (batchedInStarsSetup[batchKey].includes(baseLineId)) {
-                        isBatched = true;
-                        break;
-                    }
-                }
+                for (const batchKey in batchedInStarsSetup) if (batchedInStarsSetup[batchKey].includes(baseLineId)) { isBatched = true; break; }
                 if (!isBatched) {
                     const individualPercentage = getRandomPercentage();
                     updateLineLength(baseLineId, individualPercentage);
@@ -451,8 +446,6 @@
                 }
             });
         }
-
-
         if (!isLineColorLocked) {
             const colorOptions = globalLineColorSelect.options;
             const randomColorIndex = Math.floor(Math.random() * colorOptions.length);
@@ -460,7 +453,6 @@
             updateGlobalLineColor(currentGlobalLineColor);
             globalLineColorSelect.value = currentGlobalLineColor;
         }
-
         if (!isLineWeightLocked) {
             const weightSlider = globalLineWeightSlider;
             const minWeight = parseFloat(weightSlider.min);
@@ -475,15 +467,11 @@
         }
     }
 
-
     function saveOmniIndexState() {
         const state = {
-            currentGlobalLineColor,
-            currentGlobalLineWeight,
-            isLineColorLocked,
-            isLineWeightLocked,
+            currentGlobalLineColor, currentGlobalLineWeight, isLineColorLocked, isLineWeightLocked,
             currentActiveTabId: document.querySelector('.tab-button.active')?.dataset.tab || 'bars',
-            currentLinePercentages: { ...currentLinePercentages }, // Shallow copy
+            currentLinePercentages: { ...currentLinePercentages }, 
             hexagonSize: parseInt(hexagonSizeSlider.value, 10),
             presetValue: presetSelect.value
         };
@@ -497,14 +485,20 @@
             try {
                 const savedState = JSON.parse(savedStateString);
                 console.log('Omni Index state loaded:', savedState);
-
                 currentGlobalLineColor = savedState.currentGlobalLineColor || '#000000';
-                currentGlobalLineWeight = savedState.currentGlobalLineWeight || 1;
+                currentGlobalLineWeight = savedState.hasOwnProperty('currentGlobalLineWeight') ? savedState.currentGlobalLineWeight : 1.0;
                 isLineColorLocked = savedState.isLineColorLocked || false;
-                isLineWeightLocked = savedState.isLineWeightLocked || false;
+                isLineWeightLocked = savedState.hasOwnProperty('isLineWeightLocked') ? savedState.isLineWeightLocked : true;
                 currentActiveTabId = savedState.currentActiveTabId || 'bars';
-                Object.assign(currentLinePercentages, savedState.currentLinePercentages);
                 
+                // Ensure currentLinePercentages is properly initialized before assigning from savedState
+                BASE_LINE_IDS.forEach(id => { 
+                    currentLinePercentages[id] = (savedState.currentLinePercentages && typeof savedState.currentLinePercentages === 'object' && savedState.currentLinePercentages.hasOwnProperty(id)) 
+                                                ? savedState.currentLinePercentages[id] 
+                                                : 100;
+                });
+                // The Object.assign was removed as the loop above handles it more safely.
+
                 hexagonSizeSlider.value = savedState.hexagonSize || defaultHexRadius;
                 hexagonSizeValueDisplay.textContent = hexagonSizeSlider.value;
                 
@@ -515,7 +509,6 @@
                 lockLineWeightCheckbox.checked = isLineWeightLocked;
                 presetSelect.value = savedState.presetValue || 'none';
 
-                // Activate the correct tab
                 tabButtons.forEach(btn => btn.classList.remove('active'));
                 tabPanes.forEach(pane => pane.classList.remove('active'));
                 const tabToActivate = document.querySelector(`.tab-button[data-tab="${currentActiveTabId}"]`);
@@ -523,76 +516,148 @@
                 const paneToActivate = document.getElementById(currentActiveTabId);
                 if (paneToActivate) paneToActivate.classList.add('active');
                 
-                // Redraw grid and repopulate controls with loaded state
-                redrawGridAndUpdateControls(parseInt(hexagonSizeSlider.value, 10), true); // true to preserve loaded lengths
+                redrawGridAndUpdateControls(parseInt(hexagonSizeSlider.value, 10), true); 
                 return true;
-            } catch (e) {
-                console.error('Error loading Omni Index state:', e);
-                // Fallback to default initialization if loading fails
-            }
+            } catch (e) { console.error('Error loading Omni Index state:', e); }
         }
-        return false; // No state loaded or error occurred
+        return false; 
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         if (!loadOmniIndexState()) {
-            // Default initialization if no state was loaded
             hexagonSizeSlider.value = defaultHexRadius; 
             hexagonSizeValueDisplay.textContent = defaultHexRadius;
-            BASE_LINE_IDS.forEach(id => currentLinePercentages[id] = 100); // Reset percentages
-            globalLineColorSelect.value = currentGlobalLineColor; // Default color
-            globalLineWeightSlider.value = currentGlobalLineWeight; // Default weight
-            globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
-            lockLineColorCheckbox.checked = isLineColorLocked;
-            lockLineWeightCheckbox.checked = isLineWeightLocked;
-            presetSelect.value = 'none';
-            // Ensure default tab ('bars') is active
+            BASE_LINE_IDS.forEach(id => currentLinePercentages[id] = 100); 
+            currentGlobalLineColor = '#000000'; currentGlobalLineWeight = 1.0; 
+            isLineColorLocked = false; isLineWeightLocked = true; currentActiveTabId = 'bars';
+            if(globalLineColorSelect) globalLineColorSelect.value = currentGlobalLineColor;
+            if(lockLineColorCheckbox) lockLineColorCheckbox.checked = isLineColorLocked;
+            if(globalLineWeightSlider) globalLineWeightSlider.value = currentGlobalLineWeight;
+            if(globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
+            if(lockLineWeightCheckbox) lockLineWeightCheckbox.checked = isLineWeightLocked;
+            if(presetSelect) presetSelect.value = 'none';
             document.querySelector('.tab-button[data-tab="bars"]')?.classList.add('active');
-            document.getElementById('bars')?.classList.add('active');
-            redrawGridAndUpdateControls(defaultHexRadius, false); // false to reset lengths to 100%
+            const barsPane = document.getElementById('bars'); if (barsPane) barsPane.classList.add('active');
+            document.querySelector('.tab-button[data-tab="stars"]')?.classList.remove('active');
+            const starsPane = document.getElementById('stars'); if (starsPane) starsPane.classList.remove('active');
+            redrawGridAndUpdateControls(defaultHexRadius, false); 
         }
-
         hexagonSizeSlider.addEventListener('input', function() {
             const newRadius = parseInt(this.value);
             hexagonSizeValueDisplay.textContent = newRadius;
             redrawGridAndUpdateControls(newRadius, true); 
             if (presetSelect.value !== "none") presetSelect.value = "none";
         });
-
         globalLineColorSelect.addEventListener('change', function() {
             currentGlobalLineColor = this.value;
             updateGlobalLineColor(currentGlobalLineColor);
             if (presetSelect.value !== "none") presetSelect.value = "none";
         });
-
-        lockLineColorCheckbox.addEventListener('change', function() {
-            isLineColorLocked = this.checked;
-        });
-
+        lockLineColorCheckbox.addEventListener('change', function() { isLineColorLocked = this.checked; });
         globalLineWeightSlider.addEventListener('input', function() {
             currentGlobalLineWeight = parseFloat(this.value);
             globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
             updateGlobalLineWeight(currentGlobalLineWeight);
             if (presetSelect.value !== "none") presetSelect.value = "none";
         });
+        lockLineWeightCheckbox.addEventListener('change', function() { isLineWeightLocked = this.checked; });
+        presetSelect.addEventListener('change', function() { applyPreset(this.value); });
+        const manipulatorLink = document.getElementById('manipulatorLink');
+        if (manipulatorLink) manipulatorLink.addEventListener('click', () => saveOmniIndexState());
+        const animatorLink = document.getElementById('animatorLink');
+        if (animatorLink) animatorLink.addEventListener('click', () => saveOmniIndexState());
+        const downloadButton = document.getElementById('downloadSvgButton');
+        if (downloadButton) downloadButton.addEventListener('click', handleSvgDownload);
+    });
 
-        lockLineWeightCheckbox.addEventListener('change', function() {
-            isLineWeightLocked = this.checked;
-        });
+    function handleSvgDownload() {
+        const numHexagonsWide = parseInt(document.getElementById('hexagonsWideInput').value) || 1;
+        const numHexagonsTall = parseInt(document.getElementById('hexagonsTallInput').value) || 1;
+        
+        const currentHexRadius = parseInt(hexagonSizeSlider.value);
+        const globalStrokeColor = globalLineColorSelect.value; 
+        const globalStrokeWeight = parseFloat(globalLineWeightSlider.value);
+        
+        console.log(`Downloading SVG: ${numHexagonsWide}x${numHexagonsTall}, R=${currentHexRadius}, Color=${globalStrokeColor}, Weight=${globalStrokeWeight}`);
 
-        presetSelect.addEventListener('change', function() {
-            applyPreset(this.value);
-        });
+        const R = currentHexRadius;
+        const hexGridItemWidth = R * Math.sqrt(3); 
+        const hexGridItemHeight = R * 2;         
+        const horizSpacing = hexGridItemWidth;
+        const vertSpacing = hexGridItemHeight * 0.75; 
 
-        // Add event listeners to save state before navigating
-        const manipulator04Link = document.getElementById('manipulator04Link');
-        if (manipulator04Link) {
-            manipulator04Link.addEventListener('click', function() {
-                saveOmniIndexState(); // Save index state first
-                // M4 automatically loads state from OMNI_INDEX_STATE_KEY
+        const padding = R * 0.25; 
+        let totalSvgWidth = padding * 2;
+        if (numHexagonsWide > 0) {
+            totalSvgWidth += (numHexagonsWide - 1) * horizSpacing + hexGridItemWidth;
+            if (numHexagonsTall > 1 && numHexagonsWide > 0) { 
+                totalSvgWidth = Math.max(totalSvgWidth, ((numHexagonsWide - 0.5) * horizSpacing) + hexGridItemWidth );
+            }
+        }
+        
+        let totalSvgHeight = padding * 2;
+        if (numHexagonsTall > 0) {
+            totalSvgHeight += (numHexagonsTall - 1) * vertSpacing + hexGridItemHeight;
+        }
+        
+        let svgElements = '';
+
+        const templateLines = [];
+        if (svgContainer) { 
+            const linesInOnScreenSvg = svgContainer.querySelectorAll('line');
+            linesInOnScreenSvg.forEach(line => {
+                const x1 = parseFloat(line.getAttribute('x1'));
+                const y1 = parseFloat(line.getAttribute('y1'));
+                const x2 = parseFloat(line.getAttribute('x2'));
+                const y2 = parseFloat(line.getAttribute('y2'));
+                const sw = parseFloat(line.getAttribute('stroke-width'));
+                const opacity = line.getAttribute('stroke-opacity');
+                const displayStyle = window.getComputedStyle(line).display;
+
+                if (sw > 0 && 
+                    (opacity === null || opacity !== '0') && 
+                    displayStyle !== 'none' &&
+                    (Math.abs(x1 - x2) > 0.001 || Math.abs(y1 - y2) > 0.001) // Check for non-zero-length lines with a tolerance
+                ) {
+                    templateLines.push({ x1: x1, y1: y1, x2: x2, y2: y2 });
+                }
             });
         }
-    });
+
+        if (templateLines.length === 0) {
+            console.warn("No visible, non-zero-length lines found in the on-screen SVG to use as a template for download.");
+        }
+        
+        for (let row = 0; row < numHexagonsTall; row++) {
+            for (let col = 0; col < numHexagonsWide; col++) {
+                const offsetX = col * horizSpacing + (row % 2 === 1 ? horizSpacing / 2 : 0);
+                const offsetY = row * vertSpacing;
+                
+                const groupTranslateX = padding + offsetX + (R * Math.sqrt(3) / 2); 
+                const groupTranslateY = padding + offsetY + R;    
+
+                let groupContent = `<g transform="translate(${groupTranslateX.toFixed(3)}, ${groupTranslateY.toFixed(3)})">\n`;
+
+                templateLines.forEach(lineDef => {
+                    groupContent += `  <line x1="${lineDef.x1}" y1="${lineDef.y1}" x2="${lineDef.x2}" y2="${lineDef.y2}" stroke="${globalStrokeColor}" stroke-width="${globalStrokeWeight}" stroke-linecap="round" />\n`;
+                });
+                groupContent += `</g>\n`;
+                svgElements += groupContent;
+            }
+        }
+        
+        const finalSvgString = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<svg width="${totalSvgWidth.toFixed(3)}" height="${totalSvgHeight.toFixed(3)}" viewBox="0 0 ${totalSvgWidth.toFixed(3)} ${totalSvgHeight.toFixed(3)}" xmlns="http://www.w3.org/2000/svg">\n${svgElements}</svg>`;
+
+        const blob = new Blob([finalSvgString], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hexagon_pattern_grid_${numHexagonsWide}x${numHexagonsTall}.svg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
   </script>
 </body>
 </html>

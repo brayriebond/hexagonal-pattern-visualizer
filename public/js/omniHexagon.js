@@ -112,8 +112,8 @@ export function drawHexagonGrid(svgContainer, hexRadius, viewBox, globalLineColo
     const primeHexCenterX = viewBox.x + viewBox.width / 2;
     const primeHexCenterY = viewBox.y + viewBox.height / 2;
 
-    const numColsHalf = Math.ceil((viewBox.width / 2 / horizSpacing)) + 2;
-    const numRowsHalf = Math.ceil((viewBox.height / 2 / vertSpacing)) + 2;
+    const numColsHalf = Math.ceil((viewBox.width / 2 / horizSpacing)) - 1;
+    const numRowsHalf = Math.ceil((viewBox.height / 2 / vertSpacing)) - 1;
 
     for (let gridR = -numRowsHalf; gridR <= numRowsHalf; gridR++) {
         for (let gridC = -numColsHalf; gridC <= numColsHalf; gridC++) {
@@ -178,4 +178,12 @@ export function drawHexagonGrid(svgContainer, hexRadius, viewBox, globalLineColo
         }
     }
     return BASE_LINE_IDS;
+}
+
+export function getLineColor() {
+    return currentGlobalStrokeColor;
+}
+
+export function getLineWeight() {
+    return currentGlobalStrokeWidth;
 }
