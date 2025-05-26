@@ -62,7 +62,7 @@
       </div>
       <div class="slider-container">
         <label for="globalLineWeightSlider" style="min-width: 100px;">Line Weight:</label>
-        <input type="range" id="globalLineWeightSlider" min="0.5" max="5" value="1" step="0.5" style="flex-grow: 1;">
+        <input type="range" id="globalLineWeightSlider" min="0" max="3" value="0" step="1" style="flex-grow: 1;">
         <span id="globalLineWeightValue" class="value-display" style="min-width: 40px;">1.0</span>
       </div>
       <div class="checkbox-container" style="margin-top: 5px;">
@@ -125,9 +125,11 @@
     const globalLineWeightValueDisplay = document.getElementById('globalLineWeightValue');
     const lockLineWeightCheckbox = document.getElementById('lockLineWeight'); 
     const presetSelect = document.getElementById('presetSelect');
+
+    const allowedLineWeights = [1, 1.5, 2.5, 4];
     
     let currentGlobalLineColor = '#000000'; 
-    let currentGlobalLineWeight = 1; 
+    let currentGlobalLineWeight = allowedLineWeights[0]; // Default to 1.0
     let isLineColorLocked = false; 
     let isLineWeightLocked = true; 
     let currentActiveTabId = 'bars'; 
@@ -366,6 +368,12 @@
         if (globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
         if (lockLineWeightCheckbox) lockLineWeightCheckbox.checked = isLineWeightLocked;
         updateGlobalLineWeight(currentGlobalLineWeight); 
+        
+        // Set slider to correct index for the currentGlobalLineWeight
+        const weightIndex = allowedLineWeights.indexOf(currentGlobalLineWeight);
+        if (globalLineWeightSlider) globalLineWeightSlider.value = weightIndex !== -1 ? weightIndex : 0;
+        if (globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
+
         if (!barsTabButton || !barsTabButton.classList.contains('active')) {
              // If bars tab wasn't active and got clicked, state is saved by tab click.
              // If it was already active, we need to save here.
@@ -388,9 +396,10 @@
     
    function applyPreset(presetName) {
         if (presetName === "none") return;
-        currentGlobalLineWeight = 1.0;
+        currentGlobalLineWeight = allowedLineWeights[0]; // Default to 1.0
         updateGlobalLineWeight(currentGlobalLineWeight);
-        globalLineWeightSlider.value = currentGlobalLineWeight; 
+        const weightIndexForPreset = allowedLineWeights.indexOf(currentGlobalLineWeight);
+        globalLineWeightSlider.value = weightIndexForPreset !== -1 ? weightIndexForPreset : 0; 
         globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
         isLineWeightLocked = false; lockLineWeightCheckbox.checked = false;
         const barsTabButton = document.querySelector('.tab-button[data-tab="bars"]');
@@ -464,15 +473,10 @@
             globalLineColorSelect.value = currentGlobalLineColor;
         }
         if (!isLineWeightLocked) {
-            const weightSlider = globalLineWeightSlider;
-            const minWeight = parseFloat(weightSlider.min);
-            const maxWeight = parseFloat(weightSlider.max);
-            const stepWeight = parseFloat(weightSlider.step);
-            const numSteps = (maxWeight - minWeight) / stepWeight;
-            const randomStep = Math.floor(Math.random() * (numSteps + 1));
-            currentGlobalLineWeight = minWeight + (randomStep * stepWeight);
+            const randomIndex = Math.floor(Math.random() * allowedLineWeights.length);
+            currentGlobalLineWeight = allowedLineWeights[randomIndex];
             updateGlobalLineWeight(currentGlobalLineWeight);
-            weightSlider.value = currentGlobalLineWeight;
+            globalLineWeightSlider.value = randomIndex;
             globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
         }
         saveOmniIndexState(); // Save state after randomizing
@@ -497,7 +501,11 @@
                 const savedState = JSON.parse(savedStateString);
                 console.log('Omni Index state loaded:', savedState);
                 currentGlobalLineColor = savedState.currentGlobalLineColor || '#000000';
-                currentGlobalLineWeight = savedState.hasOwnProperty('currentGlobalLineWeight') ? savedState.currentGlobalLineWeight : 1.0;
+                let loadedWeight = savedState.hasOwnProperty('currentGlobalLineWeight') ? savedState.currentGlobalLineWeight : allowedLineWeights[0];
+                if (!allowedLineWeights.includes(loadedWeight)) {
+                    loadedWeight = allowedLineWeights[0]; // Default to 1.0 if saved weight is invalid
+                }
+                currentGlobalLineWeight = loadedWeight;
                 isLineColorLocked = savedState.isLineColorLocked || false;
                 isLineWeightLocked = savedState.hasOwnProperty('isLineWeightLocked') ? savedState.isLineWeightLocked : true;
                 currentActiveTabId = savedState.currentActiveTabId || 'bars';
@@ -515,8 +523,11 @@
                 
                 globalLineColorSelect.value = currentGlobalLineColor;
                 lockLineColorCheckbox.checked = isLineColorLocked;
-                globalLineWeightSlider.value = currentGlobalLineWeight;
+                
+                const loadedWeightIndex = allowedLineWeights.indexOf(currentGlobalLineWeight);
+                globalLineWeightSlider.value = loadedWeightIndex !== -1 ? loadedWeightIndex : 0;
                 globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
+                
                 lockLineWeightCheckbox.checked = isLineWeightLocked;
                 presetSelect.value = savedState.presetValue || 'none';
 
@@ -539,12 +550,16 @@
             hexagonSizeSlider.value = defaultHexRadius; 
             hexagonSizeValueDisplay.textContent = defaultHexRadius;
             BASE_LINE_IDS.forEach(id => currentLinePercentages[id] = 100); 
-            currentGlobalLineColor = '#000000'; currentGlobalLineWeight = 1.0; 
+            currentGlobalLineColor = '#000000'; 
+            currentGlobalLineWeight = allowedLineWeights[0]; // Default to 1.0
             isLineColorLocked = false; isLineWeightLocked = true; currentActiveTabId = 'bars';
             if(globalLineColorSelect) globalLineColorSelect.value = currentGlobalLineColor;
             if(lockLineColorCheckbox) lockLineColorCheckbox.checked = isLineColorLocked;
-            if(globalLineWeightSlider) globalLineWeightSlider.value = currentGlobalLineWeight;
+            
+            const defaultWeightIndex = allowedLineWeights.indexOf(currentGlobalLineWeight);
+            if(globalLineWeightSlider) globalLineWeightSlider.value = defaultWeightIndex !== -1 ? defaultWeightIndex : 0;
             if(globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
+            
             if(lockLineWeightCheckbox) lockLineWeightCheckbox.checked = isLineWeightLocked;
             if(presetSelect) presetSelect.value = 'none';
             document.querySelector('.tab-button[data-tab="bars"]')?.classList.add('active');
@@ -571,7 +586,8 @@
             saveOmniIndexState();
         });
         globalLineWeightSlider.addEventListener('input', function() {
-            currentGlobalLineWeight = parseFloat(this.value);
+            const selectedIndex = parseInt(this.value);
+            currentGlobalLineWeight = allowedLineWeights[selectedIndex];
             globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
             updateGlobalLineWeight(currentGlobalLineWeight);
             if (presetSelect.value !== "none") presetSelect.value = "none";
