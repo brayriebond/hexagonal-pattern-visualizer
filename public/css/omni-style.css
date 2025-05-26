@@ -424,3 +424,8 @@ h3 { /* Copied from manipulator.html, might need adjustment if global h3 is diff
 .top-navigation .nav-button:hover:not(.active) {
   background-color: #ddd;
 }
+
+.pattern-display-area {
+  border: 1px solid #ccc; /* Thin grey border */
+  box-sizing: border-box; /* Ensure border is inside the element's dimensions */
+}

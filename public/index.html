@@ -107,7 +107,7 @@
   </div>
   
   <div class="visualization-panel">
-    <svg id="omniVisualizationSvg" width="100%" height="100%" viewBox="-400 -300 800 600" style="max-width: 800px; max-height: 600px;"></svg>
+    <svg id="omniVisualizationSvg" class="pattern-display-area" width="100%" height="100%" viewBox="-400 -300 800 600" style="max-width: 800px; max-height: 600px;"></svg>
   </div>
   
   <script type="module">
@@ -193,6 +193,7 @@
                  updateSliderUI(slider, 100);
             });
             if (presetSelect.value !== "none") presetSelect.value = "none"; 
+            saveOmniIndexState(); // Save state on tab change
         });
     });
     
@@ -257,6 +258,7 @@
                     currentLinePercentages[baseId] = percentage;
                 });
                 if (presetSelect.value !== "none") presetSelect.value = "none"; 
+                saveOmniIndexState(); // Save state when a dynamic slider changes
                 if (isBatch) { 
                     linesToUpdate.forEach(baseId => { 
                         document.querySelectorAll(`input[type="range"][data-base-lineid="${baseId}"]`).forEach(indSlider => {
@@ -345,7 +347,7 @@
         const barsTabButton = document.querySelector('.tab-button[data-tab="bars"]');
         if (barsTabButton) {
             if (!barsTabButton.classList.contains('active')) {
-                barsTabButton.click(); 
+                barsTabButton.click(); // This will trigger saveOmniIndexState via tab change listener
             } else {
                 BASE_LINE_IDS.forEach(baseId => {
                     updateLineLength(baseId, 100);
@@ -355,6 +357,7 @@
                      updateSliderUI(slider, 100);
                 });
                 if (presetSelect) presetSelect.value = "none";
+                saveOmniIndexState(); // Save state if tab didn't change but settings did
             }
         }
         currentGlobalLineWeight = 1.0;
@@ -363,6 +366,12 @@
         if (globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
         if (lockLineWeightCheckbox) lockLineWeightCheckbox.checked = isLineWeightLocked;
         updateGlobalLineWeight(currentGlobalLineWeight); 
+        if (!barsTabButton || !barsTabButton.classList.contains('active')) {
+             // If bars tab wasn't active and got clicked, state is saved by tab click.
+             // If it was already active, we need to save here.
+        } else {
+            saveOmniIndexState();
+        }
     }
 
     function redrawGridAndUpdateControls(radius, preserveLengths = false) {
@@ -414,6 +423,7 @@
                     setBatchLines(linesInBatch, percentage, batchSliderElement);
                 }
             }
+            // saveOmniIndexState(); // Already handled by presetSelect change listener with a timeout
         }, isBarsActive ? 10 : 50); 
     }
 
@@ -465,6 +475,7 @@
             weightSlider.value = currentGlobalLineWeight;
             globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
         }
+        saveOmniIndexState(); // Save state after randomizing
     }
 
     function saveOmniIndexState() {
@@ -547,21 +558,36 @@
             hexagonSizeValueDisplay.textContent = newRadius;
             redrawGridAndUpdateControls(newRadius, true); 
             if (presetSelect.value !== "none") presetSelect.value = "none";
+            saveOmniIndexState();
         });
         globalLineColorSelect.addEventListener('change', function() {
             currentGlobalLineColor = this.value;
             updateGlobalLineColor(currentGlobalLineColor);
             if (presetSelect.value !== "none") presetSelect.value = "none";
+            saveOmniIndexState();
         });
-        lockLineColorCheckbox.addEventListener('change', function() { isLineColorLocked = this.checked; });
+        lockLineColorCheckbox.addEventListener('change', function() { 
+            isLineColorLocked = this.checked; 
+            saveOmniIndexState();
+        });
         globalLineWeightSlider.addEventListener('input', function() {
             currentGlobalLineWeight = parseFloat(this.value);
             globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
             updateGlobalLineWeight(currentGlobalLineWeight);
             if (presetSelect.value !== "none") presetSelect.value = "none";
+            saveOmniIndexState();
         });
-        lockLineWeightCheckbox.addEventListener('change', function() { isLineWeightLocked = this.checked; });
-        presetSelect.addEventListener('change', function() { applyPreset(this.value); });
+        lockLineWeightCheckbox.addEventListener('change', function() { 
+            isLineWeightLocked = this.checked; 
+            saveOmniIndexState();
+        });
+        presetSelect.addEventListener('change', function() { 
+            applyPreset(this.value); 
+            // applyPreset might change multiple things, so save state after it's done
+            // It also has a timeout, so saving immediately might not capture all changes.
+            // Preset changes are user actions.
+            setTimeout(saveOmniIndexState, 100); // Allow preset application to complete
+        });
         const manipulatorLink = document.getElementById('manipulatorLink');
         if (manipulatorLink) manipulatorLink.addEventListener('click', () => saveOmniIndexState());
         const animatorLink = document.getElementById('animatorLink');

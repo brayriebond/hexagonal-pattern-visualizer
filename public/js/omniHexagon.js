@@ -112,8 +112,8 @@ export function drawHexagonGrid(svgContainer, hexRadius, viewBox, globalLineColo
     const primeHexCenterX = viewBox.x + viewBox.width / 2;
     const primeHexCenterY = viewBox.y + viewBox.height / 2;
 
-    const numColsHalf = Math.ceil((viewBox.width / 2 / horizSpacing)) - 1;
-    const numRowsHalf = Math.ceil((viewBox.height / 2 / vertSpacing)) - 1;
+    const numColsHalf = Math.ceil((viewBox.width / 2 / horizSpacing));
+    const numRowsHalf = Math.ceil((viewBox.height / 2 / vertSpacing));
 
     for (let gridR = -numRowsHalf; gridR <= numRowsHalf; gridR++) {
         for (let gridC = -numColsHalf; gridC <= numColsHalf; gridC++) {

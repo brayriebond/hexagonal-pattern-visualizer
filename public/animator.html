@@ -17,24 +17,8 @@
       <a href="animator.html" class="page-toggle-button active">Animator</a>
     </div>
 
-    <!-- Global Hexagon Size (loaded from Maker/Manipulator state) -->
-    <div class="background-control" style="margin-top: 15px;">
-      <div class="slider-container">
-        <label for="hexagonSizeDisplay" style="min-width: 100px;">Hexagon Size:</label>
-        <span id="hexagonSizeDisplay" class="value-display" style="min-width: 40px; background-color: #333; padding: 5px; border-radius: 3px;">N/A</span>
-      </div>
-    </div>
-    
-    <!-- Current Line Weight (loaded from Maker/Manipulator state) -->
-    <div class="background-control">
-      <div class="slider-container">
-        <label for="lineWeightDisplay" style="min-width: 100px;">Line Weight:</label>
-        <span id="lineWeightDisplay" class="value-display" style="min-width: 40px; background-color: #333; padding: 5px; border-radius: 3px;">N/A</span>
-      </div>
-    </div>
-
     <!-- Animation Controls -->
-    <div class="background-control" style="margin-top: 20px;">
+    <div class="background-control" style="margin-top: 15px;">
         <h4>Animation Controls</h4>
         <div class="slider-container">
             <label for="animationDurationSlider" style="min-width: 150px;">Transition (X sec):</label>
@@ -56,21 +40,18 @@
 
   </div>
   
-  <div class="visualization-panel">
-    <svg id="omniVisualizationSvg" width="100%" height="100%" viewBox="-400 -300 800 600" style="max-width: 800px; max-height: 600px;"></svg>
-  </div>
-  
-  <script type="module">
+    <div class="visualization-panel">
+        <svg id="animatorSvg" class="pattern-display-area" width="100%" height="100%" viewBox="-400 -300 800 600" style="max-width: 800px; max-height: 600px;"></svg>
+    </div>
+
+    <script type="module">
     import { drawHexagonGrid, updateLineLength, BASE_LINE_IDS, updateGlobalLineColor, updateGlobalLineWeight, getLineColor, getLineWeight } from './js/omniHexagon.js';
 
     const OMNI_INDEX_STATE_KEY = 'omniIndexState'; // Key to load initial state from Maker
     const defaultHexRadius = 80;
     const viewBoxData = { x: -400, y: -300, width: 800, height: 600 };
-    const svgContainer = document.getElementById('omniVisualizationSvg');
+    const svgContainer = document.getElementById('animatorSvg');
     
-    const hexagonSizeDisplay = document.getElementById('hexagonSizeDisplay');
-    const lineWeightDisplay = document.getElementById('lineWeightDisplay');
-
     const animationDurationSlider = document.getElementById('animationDurationSlider');
     const animationDurationValue = document.getElementById('animationDurationValue');
     const stageHoldSlider = document.getElementById('stageHoldSlider');
@@ -185,9 +166,6 @@
                     activeTab: savedState.currentActiveTabId || 'bars' // To know the batching schema
                 };
 
-                hexagonSizeDisplay.textContent = currentHexRadius;
-                lineWeightDisplay.textContent = lockedLineWeight.toFixed(1);
-                
                 drawHexagonGrid(svgContainer, currentHexRadius, viewBoxData, initialGridState.color, initialGridState.weight);
                 for (const lineId in initialGridState.percentages) {
                     updateLineLength(lineId, initialGridState.percentages[lineId]);
@@ -198,8 +176,6 @@
             }
         } else {
             console.warn('No initial state found for Animator. Please set a pattern in Maker first.');
-            hexagonSizeDisplay.textContent = 'N/A';
-            lineWeightDisplay.textContent = 'N/A';
             startAnimationButton.disabled = true;
             startAnimationButton.textContent = 'Setup Pattern in Maker';
         }

@@ -150,15 +150,15 @@
     </div>
   </div>
   
-  <div class="visualization-panel">
-    <div class="visualization-container">
-      <div class="visualization-frame" id="visualizationFrame">
-        <svg id="hexagonSvg" viewBox="0 0 800 600">
-          <!-- Hexagon grid will be drawn here -->
-        </svg>
+    <div class="visualization-panel">
+      <div class="visualization-container">
+        <div class="visualization-frame" id="visualizationFrame">
+          <svg id="hexagonSvg" class="pattern-display-area" viewBox="0 0 800 600">
+            <!-- Hexagon grid will be drawn here -->
+          </svg>
+        </div>
       </div>
     </div>
-  </div>
   
   <script type="module">
     import { drawHexagonGrid, updateLineLength, BASE_LINE_IDS, updateGlobalLineColor, updateGlobalLineWeight } from './js/omniHexagon.js';
