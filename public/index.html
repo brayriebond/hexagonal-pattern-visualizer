@@ -14,7 +14,7 @@
     <div class="page-toggler">
       <a href="index.html" class="page-toggle-button active">Maker</a>
       <a href="manipulator.html" id="manipulatorLink" class="page-toggle-button">Manipulator</a>
-      <a href="animator.html" id="animatorLink" class="page-toggle-button">Animator</a>
+      
     </div>
 
     <!-- Global Hexagon Size Control -->
@@ -591,7 +591,7 @@
         const manipulatorLink = document.getElementById('manipulatorLink');
         if (manipulatorLink) manipulatorLink.addEventListener('click', () => saveOmniIndexState());
         const animatorLink = document.getElementById('animatorLink');
-        if (animatorLink) animatorLink.addEventListener('click', () => saveOmniIndexState());
+        // if (animatorLink) animatorLink.addEventListener('click', () => saveOmniIndexState()); // Animator link removed
         const downloadButton = document.getElementById('downloadSvgButton');
         if (downloadButton) downloadButton.addEventListener('click', handleSvgDownload);
     });

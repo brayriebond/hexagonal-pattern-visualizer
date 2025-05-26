@@ -97,7 +97,7 @@
     <div class="page-toggler">
       <a href="index.html" id="makerLink" class="page-toggle-button">Maker</a>
       <a href="manipulator.html" class="page-toggle-button active">Manipulator</a>
-      <a href="animator.html" id="animatorLink" class="page-toggle-button">Animator</a>
+      
     </div>
 
     <!-- Screen Ratio Control -->
@@ -622,15 +622,15 @@
               saveM4State();
           });
       }
-      const animatorLink = document.getElementById('animatorLink');
-      if (animatorLink) {
-          animatorLink.addEventListener('click', function() {
-              saveM4State(); 
-              // Animator will load from OMNI_INDEX_STATE_KEY which should be up-to-date
-              // No specific M4 state needs to be passed to Animator directly,
-              // but Maker state (OMNI_INDEX_STATE_KEY) is crucial.
-          });
-      }
+      // const animatorLink = document.getElementById('animatorLink'); // Animator link removed
+      // if (animatorLink) {
+      //     animatorLink.addEventListener('click', function() {
+      //         saveM4State(); 
+      //         // Animator will load from OMNI_INDEX_STATE_KEY which should be up-to-date
+      //         // No specific M4 state needs to be passed to Animator directly,
+      //         // but Maker state (OMNI_INDEX_STATE_KEY) is crucial.
+      //     });
+      // }
       
       // Initialize
       updateVisualizationFrame();
