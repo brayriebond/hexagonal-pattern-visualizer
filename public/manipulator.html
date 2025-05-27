@@ -29,7 +29,7 @@
       position: relative;
       border: 1px solid #B6C0C4;
       border-radius: 5px;
-      background-color: #FFFFFF;
+      /* background-color: #FFFFFF; */ /* Controlled by JavaScript now */
       overflow: hidden;
       transition: width 0.3s, height 0.3s;
     }
@@ -161,6 +161,7 @@
     </div>
   
   <script type="module">
+    console.log('Manipulator script started.'); // LOG SCRIPT START
     import { drawHexagonGrid, updateLineLength, BASE_LINE_IDS, updateGlobalLineColor, updateGlobalLineWeight } from './js/omniHexagon.js';
 
     // Storage keys
@@ -182,6 +183,7 @@
     let currentLinePercentages = {};
     let currentGlobalLineColor = '#000000';
     let currentGlobalLineWeight = 1;
+    let currentBackgroundColor = '#FFFFFF'; // New, default to white
     
     // DOM Elements
     const svg = document.getElementById('hexagonSvg');
@@ -200,13 +202,18 @@
     
     // Load pattern from omni index
     function loadPatternFromOmniIndex() {
+      console.log('loadPatternFromOmniIndex called.'); // LOG FUNCTION CALL
       const savedStateString = localStorage.getItem(OMNI_INDEX_STATE_KEY);
+      console.log('Manipulator raw savedStateString from localStorage:', savedStateString); // LOG RAW STRING
+
       if (savedStateString) {
         try {
           const savedState = JSON.parse(savedStateString);
+          console.log('Manipulator parsed OmniIndexState:', savedState); 
           currentLinePercentages = savedState.currentLinePercentages || {};
           currentGlobalLineColor = savedState.currentGlobalLineColor || '#000000';
           currentGlobalLineWeight = savedState.currentGlobalLineWeight || 1;
+          currentBackgroundColor = savedState.currentBackgroundColor || '#FFFFFF'; // Load background color
           
           // Apply M4 defaults
           hexCountInput.value = 5;
@@ -320,7 +327,9 @@
       }
       lineElementsMap.clear();
       
-      svg.style.backgroundColor = '#FFFFFF';
+      console.log('Manipulator applying background:', currentBackgroundColor, 'to svg and frame'); // ADDED CONSOLE LOG
+      svg.style.backgroundColor = currentBackgroundColor; // Apply loaded background color
+      if (frame) frame.style.backgroundColor = currentBackgroundColor; // Apply to frame as well
       
       const hexDims = calculateHexagonSizing();
       const viewBox = svg.viewBox.baseVal;
@@ -527,8 +536,17 @@
       exportSvg.setAttribute('width', globeSize);
       exportSvg.setAttribute('height', globeSize);
       exportSvg.setAttribute('viewBox', `${globeLeft} ${globeTop} ${globeSize} ${globeSize}`);
-      exportSvg.setAttribute('style', 'background-color: #FFFFFF;');
+      // exportSvg.setAttribute('style', `background-color: ${currentBackgroundColor};`); // Replaced by rect
       exportSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+      // Add background rectangle
+      const backgroundRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      backgroundRect.setAttribute('x', globeLeft);
+      backgroundRect.setAttribute('y', globeTop);
+      backgroundRect.setAttribute('width', globeSize);
+      backgroundRect.setAttribute('height', globeSize);
+      backgroundRect.setAttribute('fill', currentBackgroundColor);
+      exportSvg.appendChild(backgroundRect);
       
       // Clone visible lines only
       Array.from(svg.children).forEach(child => {
