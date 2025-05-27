@@ -30,7 +30,7 @@
     <div class="background-control">
         <div class="slider-container">
             <label for="presetSelect" style="min-width: 100px;">Preset:</label>
-            <select id="presetSelect" class="color-select" style="flex-grow: 1;">
+            <select id="presetSelect" class="color-select" style="flex-grow: 1; margin-bottom: 5px;">
                 <option value="none">None</option>
                 <option value="egnyte">Egnyte</option>
                 <option value="aec">AEC</option>
@@ -40,26 +40,28 @@
                 <option value="media">Media & Entertainment</option>
             </select>
         </div>
+        <div class="slider-container" style="margin-top: 0px;">
+            <label for="presetColorSelect" style="min-width: 100px;">Preset Color:</label>
+            <select id="presetColorSelect" class="color-select" style="flex-grow: 1;">
+                <option value="none">None</option>
+                <option value="color-on-white">Color on White</option>
+                <option value="light-grey-on-white">Light Grey on White</option>
+                <option value="medium-grey-on-white">Medium Grey on White</option>
+                <option value="black-on-white">Black on White</option>
+                <option value="black-on-color">Black on Color</option>
+                <option value="color-on-black">Color on Black</option>
+                <option value="color-on-light-grey">Color on Light Grey</option>
+                <option value="black-on-light-grey">Black on Light Grey</option>
+                <option value="medium-grey-on-light-grey">Medium Grey on Light Grey</option>
+                <option value="color-on-medium-grey">Color on Medium Grey</option>
+                <option value="black-on-medium-grey">Black on Medium Grey</option>
+                <option value="light-grey-on-medium-grey">Light Grey on Medium Grey</option>
+            </select>
+        </div>
     </div>
 
-    <!-- Global Line Color / Weight Control -->
-    <div class="background-control"> 
-      <div class="slider-container"> 
-        <label for="globalLineColorSelect" style="min-width: 100px;">Line Color:</label>
-        <select id="globalLineColorSelect" class="color-select" style="flex-grow: 1;">
-          <option value="#000000">Black</option>
-          <option value="#0BC5BA">Egnyte Teal</option>
-          <option value="#FF6640">AEC Orange</option>
-          <option value="#DA9DFF">Financial Purple</option>
-          <option value="#359DFF">LifeSci Blue</option>
-          <option value="#85E961">Channel Green</option>
-          <option value="#FF51B6">Media Pink</option>
-        </select>
-      </div>
-      <div class="checkbox-container" style="margin-top: 5px; margin-bottom: 10px;">
-        <label for="lockLineColor">Lock Color:</label>
-        <input type="checkbox" id="lockLineColor">
-      </div>
+    <!-- Line Weight Control -->
+    <div class="background-control">
       <div class="slider-container">
         <label for="globalLineWeightSlider" style="min-width: 100px;">Line Weight:</label>
         <input type="range" id="globalLineWeightSlider" min="0" max="3" value="0" step="1" style="flex-grow: 1;">
@@ -71,25 +73,87 @@
       </div>
     </div>
 
-    <!-- Tab Navigation -->
-    <div class="tab-navigation">
-      <button class="tab-button active" data-tab="bars">Bars</button>
-      <button class="tab-button" data-tab="stars">Stars</button>
-    </div>
+    <!-- Customizer Section -->
+    <div class="background-control customizer-section" id="customizerSection"> <!-- Added ID -->
+      <h4 style="margin-bottom: 10px; margin-top:0px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" id="customizerHeader">
+        Customizer
+        <span class="customizer-arrow">&#9654;</span>
+      </h4>
+      <div id="customizerContent" style="display: none;"> <!-- Content wrapper, collapsed by default -->
+        <!-- Color Controls (now inside Customizer) -->
+        <div style="padding-bottom: 10px;"> 
+          <h5 style="margin-bottom: 10px; margin-top:0px; font-size: 0.95em;">Color Controls</h5>
+          <div class="slider-container"> 
+            <label for="globalLineColorSelect" style="min-width: 100px;">Line Color:</label>
+          <select id="globalLineColorSelect" class="color-select" style="flex-grow: 1;">
+            <option value="#000000">Black</option>
+            <option value="#F0F5F7">Light Grey</option>
+            <option value="#B6C0C4">Medium Grey</option>
+            <option value="#0BC5BA">Egnyte Teal</option>
+            <option value="#FF6640">AEC Orange</option>
+            <option value="#DA9DFF">Financial Purple</option>
+            <option value="#359DFF">LifeSci Blue</option>
+            <option value="#85E961">Channel Green</option>
+            <option value="#FF51B6">Media Pink</option>
+          </select>
+        </div>
+        <div class="checkbox-container" style="margin-top: 5px; margin-bottom: 10px;">
+          <label for="lockLineColor">Lock Color:</label>
+          <input type="checkbox" id="lockLineColor">
+        </div>
 
-    <!-- Tab Content -->
-    <div class="tab-content">
-      <div id="bars" class="tab-pane active">
-        <h4>Bars Controls</h4>
-        <!-- Content generated by JS -->
+        <!-- Background Color Control -->
+        <div class="slider-container" style="margin-top: 10px;">
+          <label for="backgroundColorSelect" style="min-width: 100px;">Background:</label>
+          <select id="backgroundColorSelect" class="color-select" style="flex-grow: 1;">
+            <option value="#FFFFFF">White</option>
+            <option value="#F0F5F7">Light Grey</option>
+            <option value="#B6C0C4">Medium Grey</option>
+            <option value="#000000">Black</option>
+            <option value="#0BC5BA">Egnyte Teal</option>
+            <option value="#FF6640">AEC Orange</option>
+            <option value="#DA9DFF">Financial Purple</option>
+            <option value="#359DFF">LifeSci Blue</option>
+            <option value="#85E961">Channel Green</option>
+            <option value="#FF51B6">Media Pink</option>
+          </select>
+        </div>
+        <div class="checkbox-container" style="margin-top: 5px; margin-bottom: 10px;">
+          <label for="lockBackgroundColor">Lock Background:</label>
+          <input type="checkbox" id="lockBackgroundColor">
+        </div>
       </div>
-      <div id="stars" class="tab-pane">
-        <h4>Stars Controls</h4>
-         <!-- Content generated by JS -->
-      </div>
-      <!-- Test tab content removed -->
-    </div>
 
+      <!-- Line Length Controls Sub-section (inside Customizer) -->
+      <div style="padding-top: 15px; margin-top:15px; border-top: 1px solid #dee2e6;"> <!-- Plain div with top border for separation -->
+        <h5 style="margin-bottom: 10px; margin-top:0px; font-size: 0.95em;">Line Length Controls</h5>
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+          <button class="tab-button active" data-tab="bars">Bars</button>
+          <button class="tab-button" data-tab="stars">Stars</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <div id="bars" class="tab-pane active">
+            <h4 style="display:none;">Bars Controls</h4> <!-- Hide original H4 if sub-section has title -->
+            <!-- Content generated by JS -->
+          </div>
+          <div id="stars" class="tab-pane">
+            <h4 style="display:none;">Stars Controls</h4> <!-- Hide original H4 if sub-section has title -->
+            <!-- Content generated by JS -->
+          </div>
+          <!-- Test tab content removed -->
+        </div>
+      </div>
+    </div> <!-- End of customizerContent -->
+    </div> <!-- End of customizerSection -->
+
+    <!-- Reset Settings Button -->
+    <div class="background-control" style="margin-top: 10px;">
+        <button id="resetAllSettingsButton" class="reset-defaults-button" style="width: 100%;">Reset Settings</button>
+    </div>
+    
     <!-- SVG Download Section -->
     <div class="background-control" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ccc;">
       <h4 style="margin-bottom: 10px;">SVG Download</h4>
@@ -125,14 +189,49 @@
     const globalLineWeightValueDisplay = document.getElementById('globalLineWeightValue');
     const lockLineWeightCheckbox = document.getElementById('lockLineWeight'); 
     const presetSelect = document.getElementById('presetSelect');
+    const presetColorSelect = document.getElementById('presetColorSelect'); // New
+    const backgroundColorSelect = document.getElementById('backgroundColorSelect');
+    const lockBackgroundColorCheckbox = document.getElementById('lockBackgroundColor');
+    // const visualizationPanel = document.querySelector('.visualization-panel'); // No longer needed for BG color
+
+    const PRESET_ACCENT_COLORS = {
+        "egnyte": "#0BC5BA",
+        "aec": "#FF6640",
+        "financial": "#DA9DFF",
+        "lifesciences": "#359DFF",
+        "channel": "#85E961",
+        "media": "#FF51B6",
+        "none": "#000000" // Default for 'none' preset
+    };
+
+    const GREY_COLORS = {
+        light: '#F0F5F7',
+        medium: '#B6C0C4',
+        white: '#FFFFFF',
+        black: '#000000'
+    };
 
     const allowedLineWeights = [1, 1.5, 2.5, 4];
+    const DEFAULT_BACKGROUND_COLOR = '#FFFFFF';
+    const DEFAULT_BACKGROUND_LOCK = false;
+    const DEFAULT_PRESET_COLOR_OPTION = 'none';
+    const CUSTOMIZER_STATE_KEY = 'omniCustomizerState'; // For local storage of expand/collapse
+    const DEFAULT_SELECT_BG_COLOR = '#F0F5F7'; // Match other inputs
     
     let currentGlobalLineColor = '#000000'; 
     let currentGlobalLineWeight = allowedLineWeights[0]; // Default to 1.0
+    let currentBackgroundColor = DEFAULT_BACKGROUND_COLOR;
+    let currentPresetColorOption = DEFAULT_PRESET_COLOR_OPTION;
     let isLineColorLocked = false; 
     let isLineWeightLocked = true; 
+    let isBackgroundColorLocked = DEFAULT_BACKGROUND_LOCK;
+    let isCustomizerExpanded = false; // Default to collapsed
     let currentActiveTabId = 'bars'; 
+
+    const customizerHeader = document.getElementById('customizerHeader');
+    const customizerContent = document.getElementById('customizerContent');
+    const customizerSection = document.getElementById('customizerSection');
+
 
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabPanes = document.querySelectorAll('.tab-content .tab-pane');
@@ -194,7 +293,15 @@
             document.querySelectorAll('input[type="range"][data-base-lineid], input[type="range"][data-batch-type]').forEach(slider => {
                  updateSliderUI(slider, 100);
             });
-            if (presetSelect.value !== "none") presetSelect.value = "none"; 
+            if (presetSelect.value !== "none") {
+                presetSelect.value = "none";
+                if (presetColorSelect) {
+                    presetColorSelect.value = "none";
+                    presetColorSelect.disabled = true;
+                }
+                currentPresetColorOption = "none";
+                updatePresetSelectAppearance("none"); // Reset appearance
+            }
             saveOmniIndexState(); // Save state on tab change
         });
     });
@@ -259,7 +366,15 @@
                     updateLineLength(baseId, percentage);
                     currentLinePercentages[baseId] = percentage;
                 });
-                if (presetSelect.value !== "none") presetSelect.value = "none"; 
+                if (presetSelect.value !== "none") {
+                    presetSelect.value = "none";
+                    if (presetColorSelect) {
+                        presetColorSelect.value = "none";
+                        presetColorSelect.disabled = true;
+                    }
+                    currentPresetColorOption = "none";
+                    updatePresetSelectAppearance("none"); // Reset appearance
+                }
                 saveOmniIndexState(); // Save state when a dynamic slider changes
                 if (isBatch) { 
                     linesToUpdate.forEach(baseId => { 
@@ -331,25 +446,34 @@
 
             const resetButton = document.createElement('button');
             resetButton.className = 'reset-defaults-button'; 
-            resetButton.id = `reset-defaults-${tabPaneElement.id}`;
-            resetButton.textContent = 'Reset Tab Settings';
-            resetButton.style.width = '100%';
-            resetButton.style.marginTop = '10px'; 
-            resetButton.addEventListener('click', () => resetTabSettingsToDefaults());
-            tabPaneElement.appendChild(resetButton);
+            // Reset button is now global, so removed from here.
         }
     }
 
-    function resetTabSettingsToDefaults() {
-        console.log('Resetting tab settings to defaults...');
+    function resetAllSettingsToDefaults() { // Renamed
+        console.log('Resetting ALL settings to defaults...');
+
+        // Reset Hexagon Size
+        if (hexagonSizeSlider) hexagonSizeSlider.value = defaultHexRadius;
+        if (hexagonSizeValueDisplay) hexagonSizeValueDisplay.textContent = defaultHexRadius;
+        // Redraw will be called later, which handles applying the size
+
         currentGlobalLineColor = '#000000';
         updateGlobalLineColor(currentGlobalLineColor); 
         if (globalLineColorSelect) globalLineColorSelect.value = currentGlobalLineColor;
+        
         if (presetSelect) presetSelect.value = "none";
+        if (presetColorSelect) {
+            presetColorSelect.value = "none";
+            presetColorSelect.disabled = true;
+        }
+        currentPresetColorOption = "none";
+        updatePresetSelectAppearance("none"); // Reset appearance
+
         const barsTabButton = document.querySelector('.tab-button[data-tab="bars"]');
         if (barsTabButton) {
             if (!barsTabButton.classList.contains('active')) {
-                barsTabButton.click(); // This will trigger saveOmniIndexState via tab change listener
+                barsTabButton.click(); 
             } else {
                 BASE_LINE_IDS.forEach(baseId => {
                     updateLineLength(baseId, 100);
@@ -358,28 +482,40 @@
                 document.querySelectorAll('input[type="range"][data-base-lineid], input[type="range"][data-batch-type]').forEach(slider => {
                      updateSliderUI(slider, 100);
                 });
-                if (presetSelect) presetSelect.value = "none";
-                saveOmniIndexState(); // Save state if tab didn't change but settings did
+                // presetSelect and presetColorSelect already set to none above
+                saveOmniIndexState(); 
             }
         }
-        currentGlobalLineWeight = 1.0;
+        currentGlobalLineWeight = allowedLineWeights[0]; // Use the first from allowed list
         isLineWeightLocked = true;
         if (globalLineWeightSlider) globalLineWeightSlider.value = currentGlobalLineWeight;
-        if (globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
+        if (globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1); // Ensure display is for the value, not index
         if (lockLineWeightCheckbox) lockLineWeightCheckbox.checked = isLineWeightLocked;
-        updateGlobalLineWeight(currentGlobalLineWeight); 
+        updateGlobalLineWeight(currentGlobalLineWeight);
+        
+        currentBackgroundColor = DEFAULT_BACKGROUND_COLOR;
+        isBackgroundColorLocked = DEFAULT_BACKGROUND_LOCK;
+        if (backgroundColorSelect) backgroundColorSelect.value = currentBackgroundColor;
+        if (lockBackgroundColorCheckbox) lockBackgroundColorCheckbox.checked = isBackgroundColorLocked;
+        if (svgContainer) svgContainer.style.backgroundColor = currentBackgroundColor;
         
         // Set slider to correct index for the currentGlobalLineWeight
         const weightIndex = allowedLineWeights.indexOf(currentGlobalLineWeight);
         if (globalLineWeightSlider) globalLineWeightSlider.value = weightIndex !== -1 ? weightIndex : 0;
-        if (globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
+        if (globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1); // Ensure display is for the value
 
-        if (!barsTabButton || !barsTabButton.classList.contains('active')) {
-             // If bars tab wasn't active and got clicked, state is saved by tab click.
-             // If it was already active, we need to save here.
-        } else {
-            saveOmniIndexState();
-        }
+        // Redraw the grid with the new default size and reset line lengths
+        redrawGridAndUpdateControls(defaultHexRadius, false); 
+        // Note: redrawGridAndUpdateControls will repopulate tab controls, which will set sliders to 100%
+        // and currentLinePercentages will be reset if preserveLengths is false.
+
+        // Ensure the active tab's sliders are visually reset if they weren't by redraw
+        // This might be redundant if redrawGridAndUpdateControls correctly resets everything.
+        document.querySelectorAll(`#${currentActiveTabId} input[type="range"][data-base-lineid], #${currentActiveTabId} input[type="range"][data-batch-type]`).forEach(slider => {
+            updateSliderUI(slider, 100);
+        });
+        
+        saveOmniIndexState(); // Save all reset states
     }
 
     function redrawGridAndUpdateControls(radius, preserveLengths = false) {
@@ -394,36 +530,119 @@
         } else console.error('SVG container #omniVisualizationSvg not found!');
     }
     
+    function getPresetAccentColor(presetName) {
+        return PRESET_ACCENT_COLORS[presetName] || PRESET_ACCENT_COLORS.none;
+    }
+
+    function updatePresetSelectAppearance(presetName) {
+        if (!presetSelect) return;
+        const accentColor = getPresetAccentColor(presetName);
+        if (presetName === 'none' || accentColor === PRESET_ACCENT_COLORS.none) {
+            presetSelect.style.backgroundColor = DEFAULT_SELECT_BG_COLOR;
+            presetSelect.style.color = '#000000';
+        } else {
+            presetSelect.style.backgroundColor = accentColor;
+            presetSelect.style.color = '#000000'; // Ensure black text for contrast
+        }
+    }
+
+    function applyPresetColorOption(optionValue, activePresetName) {
+        currentPresetColorOption = optionValue;
+        let newLineEditColor = currentGlobalLineColor;
+        let newBgColor = currentBackgroundColor;
+        const presetAccent = getPresetAccentColor(activePresetName);
+
+        if (activePresetName === 'none' || optionValue === 'none') {
+            // When 'none' is selected for preset color, or if the main preset is 'none',
+            // colors are determined by manual controls, not by this function.
+            // The UI for presetColorSelect should be set to 'none' by the caller.
+            return;
+        }
+
+        switch (optionValue) {
+            case 'color-on-white': newLineEditColor = presetAccent; newBgColor = GREY_COLORS.white; break;
+            case 'light-grey-on-white': newLineEditColor = GREY_COLORS.light; newBgColor = GREY_COLORS.white; break;
+            case 'medium-grey-on-white': newLineEditColor = GREY_COLORS.medium; newBgColor = GREY_COLORS.white; break;
+            case 'black-on-white': newLineEditColor = GREY_COLORS.black; newBgColor = GREY_COLORS.white; break;
+            case 'black-on-color': newLineEditColor = GREY_COLORS.black; newBgColor = presetAccent; break;
+            case 'color-on-black': newLineEditColor = presetAccent; newBgColor = GREY_COLORS.black; break;
+            case 'color-on-light-grey': newLineEditColor = presetAccent; newBgColor = GREY_COLORS.light; break;
+            case 'black-on-light-grey': newLineEditColor = GREY_COLORS.black; newBgColor = GREY_COLORS.light; break;
+            case 'medium-grey-on-light-grey': newLineEditColor = GREY_COLORS.medium; newBgColor = GREY_COLORS.light; break;
+            case 'color-on-medium-grey': newLineEditColor = presetAccent; newBgColor = GREY_COLORS.medium; break;
+            case 'black-on-medium-grey': newLineEditColor = GREY_COLORS.black; newBgColor = GREY_COLORS.medium; break;
+            case 'light-grey-on-medium-grey': newLineEditColor = GREY_COLORS.light; newBgColor = GREY_COLORS.medium; break;
+        }
+
+        if (!isLineColorLocked) {
+            currentGlobalLineColor = newLineEditColor;
+            if (globalLineColorSelect) globalLineColorSelect.value = currentGlobalLineColor;
+            updateGlobalLineColor(currentGlobalLineColor);
+        }
+        if (!isBackgroundColorLocked) {
+            currentBackgroundColor = newBgColor;
+            if (backgroundColorSelect) backgroundColorSelect.value = currentBackgroundColor;
+            if (svgContainer) svgContainer.style.backgroundColor = currentBackgroundColor;
+        }
+    }
+
    function applyPreset(presetName) {
-        if (presetName === "none") return;
-        currentGlobalLineWeight = allowedLineWeights[0]; // Default to 1.0
+        if (presetName === "none") {
+            // If preset is set to 'none' (e.g. by manual control change),
+            // ensure presetColorSelect also goes to 'none' and is disabled.
+            if (presetColorSelect) {
+                presetColorSelect.value = "none";
+                presetColorSelect.disabled = true;
+            }
+            currentPresetColorOption = "none";
+            updatePresetSelectAppearance("none"); // Update main preset dropdown style
+            // Don't apply any further preset logic. Colors/lengths are now manual.
+            saveOmniIndexState();
+            return;
+        }
+
+        // A specific preset is chosen
+        if (presetColorSelect) presetColorSelect.disabled = false; // Enable it
+        currentGlobalLineWeight = allowedLineWeights[0]; // Default to 1.0 for presets
         updateGlobalLineWeight(currentGlobalLineWeight);
         const weightIndexForPreset = allowedLineWeights.indexOf(currentGlobalLineWeight);
-        globalLineWeightSlider.value = weightIndexForPreset !== -1 ? weightIndexForPreset : 0; 
-        globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
-        isLineWeightLocked = false; lockLineWeightCheckbox.checked = false;
+        if (globalLineWeightSlider) globalLineWeightSlider.value = weightIndexForPreset !== -1 ? weightIndexForPreset : 0; 
+        if (globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
+        isLineWeightLocked = false; if (lockLineWeightCheckbox) lockLineWeightCheckbox.checked = false;
+        
+        // Set default preset color option and apply it
+        if (presetColorSelect) presetColorSelect.value = 'color-on-white';
+        applyPresetColorOption('color-on-white', presetName); // This handles line and bg color based on locks
+
+        // Applying a preset also unlocks line color and background color by default
+        isLineColorLocked = false; if (lockLineColorCheckbox) lockLineColorCheckbox.checked = false;
+        isBackgroundColorLocked = false; if (lockBackgroundColorCheckbox) lockBackgroundColorCheckbox.checked = false;
+
+
         const barsTabButton = document.querySelector('.tab-button[data-tab="bars"]');
         let isBarsActive = barsTabButton.classList.contains('active');
         if (barsTabButton && !isBarsActive) barsTabButton.click(); 
+
         setTimeout(() => {
             const borderLines = BASE_LINE_IDS.filter(id => id.startsWith("border-"));
             setBatchLines(borderLines, 75, document.getElementById(`slider-bars-batch-border`));
             const starsBorderBatchSlider = document.getElementById(`slider-stars-batch-border`);
             if (starsBorderBatchSlider) updateSliderUI(starsBorderBatchSlider, 75);
-            let colorToApply = currentGlobalLineColor; 
+            
             const targetBarsBatchPercentages = {}; 
+            // Preset accent color is now handled by applyPresetColorOption, so no need for colorToApply here
+            // Update the appearance of the presetSelect dropdown itself
+            updatePresetSelectAppearance(presetName);
+
             switch (presetName) {
-                case "egnyte": colorToApply = "#0BC5BA"; targetBarsBatchPercentages["vertical-spokes"] = 75; targetBarsBatchPercentages["horizontal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-corner-spokes"] = 75; break;
-                case "aec": colorToApply = "#FF6640"; targetBarsBatchPercentages["vertical-spokes"] = 75; targetBarsBatchPercentages["horizontal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-corner-spokes"] = 75; break;
-                case "financial":  colorToApply = "#DA9DFF"; targetBarsBatchPercentages["vertical-spokes"] = 75; targetBarsBatchPercentages["horizontal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-corner-spokes"] = 0; break;
-                case "lifesciences": colorToApply = "#359DFF"; targetBarsBatchPercentages["vertical-spokes"] = 0; targetBarsBatchPercentages["horizontal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-corner-spokes"] = 0; break;
-                case "channel":  colorToApply = "#85E961"; targetBarsBatchPercentages["vertical-spokes"] = 0; targetBarsBatchPercentages["horizontal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-corner-spokes"] = 75; break;
-                case "media":  colorToApply = "#FF51B6"; targetBarsBatchPercentages["vertical-spokes"] = 0; targetBarsBatchPercentages["horizontal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-corner-spokes"] = 0; break;
+                case "egnyte": targetBarsBatchPercentages["vertical-spokes"] = 75; targetBarsBatchPercentages["horizontal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-corner-spokes"] = 75; break;
+                case "aec": targetBarsBatchPercentages["vertical-spokes"] = 75; targetBarsBatchPercentages["horizontal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-corner-spokes"] = 75; break;
+                case "financial":  targetBarsBatchPercentages["vertical-spokes"] = 75; targetBarsBatchPercentages["horizontal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-corner-spokes"] = 0; break;
+                case "lifesciences": targetBarsBatchPercentages["vertical-spokes"] = 0; targetBarsBatchPercentages["horizontal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-corner-spokes"] = 0; break;
+                case "channel":  targetBarsBatchPercentages["vertical-spokes"] = 0; targetBarsBatchPercentages["horizontal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-corner-spokes"] = 75; break;
+                case "media":  targetBarsBatchPercentages["vertical-spokes"] = 0; targetBarsBatchPercentages["horizontal-edge-spokes"] = 0; targetBarsBatchPercentages["diagonal-edge-spokes"] = 75; targetBarsBatchPercentages["diagonal-corner-spokes"] = 0; break;
             }
-            currentGlobalLineColor = colorToApply;
-            updateGlobalLineColor(currentGlobalLineColor);
-            globalLineColorSelect.value = currentGlobalLineColor;
-            isLineColorLocked = false; lockLineColorCheckbox.checked = false;
+            
             for (const batchKey in batchedInBarsSetup) { 
                 if (targetBarsBatchPercentages.hasOwnProperty(batchKey)) {
                     const linesInBatch = batchedInBarsSetup[batchKey];
@@ -432,7 +651,7 @@
                     setBatchLines(linesInBatch, percentage, batchSliderElement);
                 }
             }
-            // saveOmniIndexState(); // Already handled by presetSelect change listener with a timeout
+            saveOmniIndexState(); // Save after all preset changes are applied
         }, isBarsActive ? 10 : 50); 
     }
 
@@ -440,7 +659,21 @@
     function getRandomPercentage() { return randomPercentageMap[Math.floor(Math.random() * randomPercentageMap.length)]; }
 
     function randomizeTabSettings(tabId) {
-        if (presetSelect.value !== "none") presetSelect.value = "none";
+        if (presetSelect) presetSelect.value = "none";
+        if (presetColorSelect) {
+            presetColorSelect.value = "none";
+            presetColorSelect.disabled = true;
+        }
+        currentPresetColorOption = "none";
+        updatePresetSelectAppearance("none"); // Reset appearance
+
+        if (!isBackgroundColorLocked) {
+            // Randomize background or set to default? Let's set to default for now.
+            currentBackgroundColor = DEFAULT_BACKGROUND_COLOR; 
+            if (backgroundColorSelect) backgroundColorSelect.value = currentBackgroundColor;
+            if (svgContainer) svgContainer.style.backgroundColor = currentBackgroundColor;
+        }
+
         const relevantBatchSetup = (tabId === "stars") ? batchedInStarsSetup : batchedInBarsSetup;
         const borderPercentage = getRandomPercentage();
         const borderLines = BASE_LINE_IDS.filter(id => id.startsWith("border-"));
@@ -485,10 +718,14 @@
     function saveOmniIndexState() {
         const state = {
             currentGlobalLineColor, currentGlobalLineWeight, isLineColorLocked, isLineWeightLocked,
+            currentBackgroundColor, isBackgroundColorLocked,
+            currentPresetColorOption, 
+            isCustomizerExpanded, // Save customizer state
             currentActiveTabId: document.querySelector('.tab-button.active')?.dataset.tab || 'bars',
             currentLinePercentages: { ...currentLinePercentages }, 
             hexagonSize: parseInt(hexagonSizeSlider.value, 10),
-            presetValue: presetSelect.value
+            presetValue: presetSelect.value,
+            presetColorValue: presetColorSelect.value 
         };
         localStorage.setItem(OMNI_INDEX_STATE_KEY, JSON.stringify(state));
         console.log('Omni Index state saved:', state);
@@ -508,6 +745,15 @@
                 currentGlobalLineWeight = loadedWeight;
                 isLineColorLocked = savedState.isLineColorLocked || false;
                 isLineWeightLocked = savedState.hasOwnProperty('isLineWeightLocked') ? savedState.isLineWeightLocked : true;
+                
+                currentBackgroundColor = savedState.currentBackgroundColor || DEFAULT_BACKGROUND_COLOR;
+                isBackgroundColorLocked = savedState.hasOwnProperty('isBackgroundColorLocked') ? savedState.isBackgroundColorLocked : DEFAULT_BACKGROUND_LOCK;
+                
+                currentPresetColorOption = savedState.currentPresetColorOption || DEFAULT_PRESET_COLOR_OPTION;
+                isCustomizerExpanded = savedState.hasOwnProperty('isCustomizerExpanded') ? savedState.isCustomizerExpanded : false;
+                let loadedPresetValue = savedState.presetValue || 'none';
+                let loadedPresetColorValue = savedState.presetColorValue || 'none';
+
                 currentActiveTabId = savedState.currentActiveTabId || 'bars';
                 
                 // Ensure currentLinePercentages is properly initialized before assigning from savedState
@@ -529,7 +775,36 @@
                 globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
                 
                 lockLineWeightCheckbox.checked = isLineWeightLocked;
-                presetSelect.value = savedState.presetValue || 'none';
+                
+                if (backgroundColorSelect) backgroundColorSelect.value = currentBackgroundColor;
+                if (lockBackgroundColorCheckbox) lockBackgroundColorCheckbox.checked = isBackgroundColorLocked;
+                if (svgContainer) svgContainer.style.backgroundColor = currentBackgroundColor;
+                
+                if (presetSelect) presetSelect.value = loadedPresetValue;
+                if (presetColorSelect) {
+                    presetColorSelect.value = loadedPresetColorValue;
+                    presetColorSelect.disabled = (loadedPresetValue === 'none');
+                }
+                
+                updatePresetSelectAppearance(loadedPresetValue); // Update style of presetSelect
+
+                // If a preset was loaded, re-apply its color option logic
+                // This ensures consistency if locks were changed or state was manually edited
+                if (loadedPresetValue !== 'none' && loadedPresetColorValue !== 'none') {
+                    applyPresetColorOption(loadedPresetColorValue, loadedPresetValue);
+                }
+
+                // Apply customizer expanded state
+                if (customizerContent && customizerSection) {
+                    if (isCustomizerExpanded) {
+                        customizerContent.style.display = 'block';
+                        customizerSection.classList.add('expanded');
+                    } else {
+                        customizerContent.style.display = 'none';
+                        customizerSection.classList.remove('expanded');
+                    }
+                }
+
 
                 tabButtons.forEach(btn => btn.classList.remove('active'));
                 tabPanes.forEach(pane => pane.classList.remove('active'));
@@ -546,22 +821,46 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        if (!loadOmniIndexState()) {
+        if (!loadOmniIndexState()) { // Apply defaults if no saved state or loading failed
             hexagonSizeSlider.value = defaultHexRadius; 
             hexagonSizeValueDisplay.textContent = defaultHexRadius;
             BASE_LINE_IDS.forEach(id => currentLinePercentages[id] = 100); 
             currentGlobalLineColor = '#000000'; 
             currentGlobalLineWeight = allowedLineWeights[0]; // Default to 1.0
-            isLineColorLocked = false; isLineWeightLocked = true; currentActiveTabId = 'bars';
+            currentBackgroundColor = DEFAULT_BACKGROUND_COLOR;
+            currentPresetColorOption = DEFAULT_PRESET_COLOR_OPTION;
+            isCustomizerExpanded = false; // Default to collapsed
+            isLineColorLocked = false; 
+            isLineWeightLocked = true; 
+            isBackgroundColorLocked = DEFAULT_BACKGROUND_LOCK;
+            currentActiveTabId = 'bars';
+
             if(globalLineColorSelect) globalLineColorSelect.value = currentGlobalLineColor;
             if(lockLineColorCheckbox) lockLineColorCheckbox.checked = isLineColorLocked;
             
             const defaultWeightIndex = allowedLineWeights.indexOf(currentGlobalLineWeight);
             if(globalLineWeightSlider) globalLineWeightSlider.value = defaultWeightIndex !== -1 ? defaultWeightIndex : 0;
             if(globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
-            
             if(lockLineWeightCheckbox) lockLineWeightCheckbox.checked = isLineWeightLocked;
+
+            if(backgroundColorSelect) backgroundColorSelect.value = currentBackgroundColor;
+            if(lockBackgroundColorCheckbox) lockBackgroundColorCheckbox.checked = isBackgroundColorLocked;
+            if(svgContainer) svgContainer.style.backgroundColor = currentBackgroundColor;
+            
             if(presetSelect) presetSelect.value = 'none';
+            if(presetColorSelect) {
+                presetColorSelect.value = 'none';
+                presetColorSelect.disabled = true;
+            }
+            updatePresetSelectAppearance('none'); // Set initial style for presetSelect
+            
+            // Set initial customizer state (collapsed)
+            if (customizerContent && customizerSection) {
+                customizerContent.style.display = 'none';
+                customizerSection.classList.remove('expanded');
+            }
+
+
             document.querySelector('.tab-button[data-tab="bars"]')?.classList.add('active');
             const barsPane = document.getElementById('bars'); if (barsPane) barsPane.classList.add('active');
             document.querySelector('.tab-button[data-tab="stars"]')?.classList.remove('active');
@@ -572,17 +871,37 @@
             const newRadius = parseInt(this.value);
             hexagonSizeValueDisplay.textContent = newRadius;
             redrawGridAndUpdateControls(newRadius, true); 
-            if (presetSelect.value !== "none") presetSelect.value = "none";
+            if (presetSelect.value !== "none") {
+                presetSelect.value = "none";
+                if (presetColorSelect) {
+                    presetColorSelect.value = "none";
+                    presetColorSelect.disabled = true;
+                }
+                currentPresetColorOption = "none";
+                updatePresetSelectAppearance("none");
+            }
             saveOmniIndexState();
         });
         globalLineColorSelect.addEventListener('change', function() {
             currentGlobalLineColor = this.value;
             updateGlobalLineColor(currentGlobalLineColor);
-            if (presetSelect.value !== "none") presetSelect.value = "none";
+            if (presetSelect.value !== "none") {
+                presetSelect.value = "none";
+                if (presetColorSelect) {
+                    presetColorSelect.value = "none";
+                    presetColorSelect.disabled = true;
+                }
+                currentPresetColorOption = "none";
+                updatePresetSelectAppearance("none");
+            }
             saveOmniIndexState();
         });
         lockLineColorCheckbox.addEventListener('change', function() { 
             isLineColorLocked = this.checked; 
+            // If unchecking while a preset color option is active, the color might change
+            if (!isLineColorLocked && presetSelect.value !== 'none' && presetColorSelect.value !== 'none') {
+                 applyPresetColorOption(presetColorSelect.value, presetSelect.value);
+            }
             saveOmniIndexState();
         });
         globalLineWeightSlider.addEventListener('input', function() {
@@ -590,24 +909,81 @@
             currentGlobalLineWeight = allowedLineWeights[selectedIndex];
             globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1);
             updateGlobalLineWeight(currentGlobalLineWeight);
-            if (presetSelect.value !== "none") presetSelect.value = "none";
+            // Presets are NOT reset when only line weight changes.
             saveOmniIndexState();
         });
         lockLineWeightCheckbox.addEventListener('change', function() { 
             isLineWeightLocked = this.checked; 
             saveOmniIndexState();
         });
-        presetSelect.addEventListener('change', function() { 
-            applyPreset(this.value); 
-            // applyPreset might change multiple things, so save state after it's done
-            // It also has a timeout, so saving immediately might not capture all changes.
-            // Preset changes are user actions.
-            setTimeout(saveOmniIndexState, 100); // Allow preset application to complete
+        backgroundColorSelect.addEventListener('change', function() {
+            currentBackgroundColor = this.value;
+            if (svgContainer) svgContainer.style.backgroundColor = currentBackgroundColor;
+            if (presetSelect.value !== "none") {
+                presetSelect.value = "none";
+                if (presetColorSelect) {
+                    presetColorSelect.value = "none";
+                    presetColorSelect.disabled = true;
+                }
+                currentPresetColorOption = "none";
+                updatePresetSelectAppearance("none");
+            }
+            saveOmniIndexState();
         });
+        lockBackgroundColorCheckbox.addEventListener('change', function() {
+            isBackgroundColorLocked = this.checked;
+            if (!isBackgroundColorLocked && presetSelect.value !== 'none' && presetColorSelect.value !== 'none') {
+                 applyPresetColorOption(presetColorSelect.value, presetSelect.value);
+            }
+            saveOmniIndexState();
+        });
+        presetSelect.addEventListener('change', function() {
+            const selectedPresetValue = this.value;
+            applyPreset(selectedPresetValue); // applyPreset handles enabling/disabling presetColorSelect internally
+                                              // and also sets its default value if a preset is chosen.
+            // Explicitly ensure disabled state if "none" is chosen for presetSelect
+            if (selectedPresetValue === 'none' && presetColorSelect) {
+                 presetColorSelect.disabled = true;
+                 presetColorSelect.value = 'none'; // Also reset its value
+                 currentPresetColorOption = 'none';
+            }
+            saveOmniIndexState(); 
+        });
+        presetColorSelect.addEventListener('change', function() {
+            const selectedPreset = presetSelect.value;
+            if (selectedPreset !== 'none') {
+                applyPresetColorOption(this.value, selectedPreset);
+            } else {
+                // This case should ideally not be reachable if presetColorSelect is disabled
+                // when presetSelect is 'none'. But as a safeguard:
+                this.value = 'none'; 
+                currentPresetColorOption = 'none';
+            }
+            saveOmniIndexState();
+        });
+
         const manipulatorLink = document.getElementById('manipulatorLink');
         if (manipulatorLink) manipulatorLink.addEventListener('click', () => saveOmniIndexState());
         const animatorLink = document.getElementById('animatorLink');
         // if (animatorLink) animatorLink.addEventListener('click', () => saveOmniIndexState()); // Animator link removed
+        
+        const resetAllButton = document.getElementById('resetAllSettingsButton');
+        if (resetAllButton) resetAllButton.addEventListener('click', resetAllSettingsToDefaults);
+
+        if (customizerHeader && customizerContent && customizerSection) {
+            customizerHeader.addEventListener('click', () => {
+                isCustomizerExpanded = !isCustomizerExpanded;
+                if (isCustomizerExpanded) {
+                    customizerContent.style.display = 'block';
+                    customizerSection.classList.add('expanded');
+                } else {
+                    customizerContent.style.display = 'none';
+                    customizerSection.classList.remove('expanded');
+                }
+                saveOmniIndexState(); // Save the new expanded/collapsed state
+            });
+        }
+
         const downloadButton = document.getElementById('downloadSvgButton');
         if (downloadButton) downloadButton.addEventListener('click', handleSvgDownload);
     });
@@ -617,10 +993,14 @@
         const numHexagonsTall = parseInt(document.getElementById('hexagonsTallInput').value) || 1;
         
         const currentHexRadius = parseInt(hexagonSizeSlider.value);
-        const globalStrokeColor = globalLineColorSelect.value; 
-        const globalStrokeWeight = parseFloat(globalLineWeightSlider.value);
+        // Use currentGlobalLineColor and currentBackgroundColor for accuracy
+        const finalGlobalStrokeColor = currentGlobalLineColor; 
+        const finalBackgroundColor = currentBackgroundColor;
         
-        console.log(`Downloading SVG: ${numHexagonsWide}x${numHexagonsTall}, R=${currentHexRadius}, Color=${globalStrokeColor}, Weight=${globalStrokeWeight}`);
+        // globalLineWeightSlider stores index, currentGlobalLineWeight has the actual value
+        const finalGlobalStrokeWeight = currentGlobalLineWeight; 
+        
+        console.log(`Downloading SVG: ${numHexagonsWide}x${numHexagonsTall}, R=${currentHexRadius}, LineColor=${finalGlobalStrokeColor}, BGColor=${finalBackgroundColor}, Weight=${finalGlobalStrokeWeight}`);
 
         const R = currentHexRadius;
         const hexGridItemWidth = R * Math.sqrt(3); 
@@ -681,14 +1061,17 @@
                 let groupContent = `<g transform="translate(${groupTranslateX.toFixed(3)}, ${groupTranslateY.toFixed(3)})">\n`;
 
                 templateLines.forEach(lineDef => {
-                    groupContent += `  <line x1="${lineDef.x1}" y1="${lineDef.y1}" x2="${lineDef.x2}" y2="${lineDef.y2}" stroke="${globalStrokeColor}" stroke-width="${globalStrokeWeight}" stroke-linecap="round" />\n`;
+                    // Use finalGlobalStrokeColor and finalGlobalStrokeWeight
+                    groupContent += `  <line x1="${lineDef.x1}" y1="${lineDef.y1}" x2="${lineDef.x2}" y2="${lineDef.y2}" stroke="${finalGlobalStrokeColor}" stroke-width="${finalGlobalStrokeWeight}" stroke-linecap="round" />\n`;
                 });
                 groupContent += `</g>\n`;
                 svgElements += groupContent;
             }
         }
         
-        const finalSvgString = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<svg width="${totalSvgWidth.toFixed(3)}" height="${totalSvgHeight.toFixed(3)}" viewBox="0 0 ${totalSvgWidth.toFixed(3)} ${totalSvgHeight.toFixed(3)}" xmlns="http://www.w3.org/2000/svg">\n${svgElements}</svg>`;
+        // Add background rectangle
+        const backgroundRect = `<rect width="${totalSvgWidth.toFixed(3)}" height="${totalSvgHeight.toFixed(3)}" fill="${finalBackgroundColor}" />\n`;
+        const finalSvgString = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<svg width="${totalSvgWidth.toFixed(3)}" height="${totalSvgHeight.toFixed(3)}" viewBox="0 0 ${totalSvgWidth.toFixed(3)} ${totalSvgHeight.toFixed(3)}" xmlns="http://www.w3.org/2000/svg">\n${backgroundRect}${svgElements}</svg>`;
 
         const blob = new Blob([finalSvgString], { type: 'image/svg+xml' });
         const url = URL.createObjectURL(blob);

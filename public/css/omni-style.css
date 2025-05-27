@@ -429,3 +429,11 @@ h3 { /* Copied from manipulator.html, might need adjustment if global h3 is diff
   border: 1px solid #ccc; /* Thin grey border */
   box-sizing: border-box; /* Ensure border is inside the element's dimensions */
 }
+
+.customizer-arrow {
+  transition: transform 0.3s ease;
+  font-size: 0.8em; 
+}
+.customizer-section.expanded .customizer-arrow {
+  transform: rotate(90deg);
+}
