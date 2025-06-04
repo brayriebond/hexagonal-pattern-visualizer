@@ -91,7 +91,6 @@
     <div class="page-toggler">
       <a href="index.html" id="makerLink" class="page-toggle-button">Pattern</a>
       <a href="manipulator.html" id="manipulatorLink" class="page-toggle-button">Globe</a>
-      <a href="globe_spin.html" class="page-toggle-button">Globe Spin</a>
       <a href="globe_spin_geo.html" id="globeSpinGeoLink" class="page-toggle-button active">Globe Spin Geo</a>
     </div>
 
@@ -146,6 +145,16 @@
       <div class="manipulator-control-item">
         <label for="spinDirectionToggle">Spin Direction:</label>
         <button id="spinDirectionToggle" class="button" style="width: 100%;">Toggle CW/CCW</button>
+      </div>
+    </div>
+    <!-- Altitude Control -->
+    <div class="manipulator-controls">
+      <h4>Altitude Control</h4>
+      <div class="manipulator-control-item">
+        <label for="altitude">Altitude: <span id="altitudeValue">0.5</span></label>
+        <div class="slider-container">
+          <input type="range" id="altitude" min="0" max="1" value="0.5" step="0.01">
+        </div>
       </div>
     </div>
   </div>
@@ -203,8 +212,15 @@
     const spinAxisTiltSlider = document.getElementById('spinAxisTilt');
     const spinAxisTiltValue = document.getElementById('spinAxisTiltValue');
     const spinDirectionToggleButton = document.getElementById('spinDirectionToggle');
+
+    const altitudeSlider = document.getElementById('altitude');
+    const altitudeValueDisplay = document.getElementById('altitudeValue');
+
+    altitudeSlider.addEventListener('input', function() {
+      altitudeValueDisplay.textContent = this.value;
+    });
     
-    const lineDataMap = new Map(); 
+    const lineDataMap = new Map();
     
     function loadPatternFromOmniIndex() {
       const savedStateString = localStorage.getItem(OMNI_INDEX_STATE_KEY);
@@ -434,7 +450,8 @@
         // Clamp z_norm to prevent issues if point is slightly off sphere or perspective factor is large
         const clamped_z_norm = Math.min(Math.max(z_norm_for_scale, 0), 0.9999); 
 
-        const perspectiveFactor = 0.3; // Reduced for a gentler bulge, might help horizon
+        let altitude = parseFloat(document.getElementById('altitude').value);
+        const perspectiveFactor = altitude * 0.5; // Scale altitude to a reasonable perspective factor
         const scaleDenominator = 1 - clamped_z_norm * perspectiveFactor;
         
         const perspectiveScale = (scaleDenominator < 0.01) ? 100 : 1 / scaleDenominator; // Avoid division by zero or extreme scaling
@@ -603,6 +620,16 @@
         spinDirectionMultiplier *= -1;
         saveSpinState();
       });
+      
+      const altitudeSlider = document.getElementById('altitude');
+      const altitudeValue = document.getElementById('altitudeValue');
+
+      altitudeSlider.addEventListener('input', function() {
+        altitude = parseFloat(this.value);
+        altitudeValue.textContent = altitude.toFixed(2);
+        animate(); // Re-render the globe with the new altitude
+      });
+
       document.getElementById('makerLink')?.addEventListener('click', () => { saveM4State(); saveSpinState(); });
       document.getElementById('manipulatorLink')?.addEventListener('click', () => { saveM4State(); saveSpinState(); });
       document.getElementById('globeSpinGeoLink')?.addEventListener('click', () => { saveM4State(); saveSpinState(); }); // Added for consistency
