@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manipulator M4</title>
+  <title>Globe M4</title>
   <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/omni-style.css">
   <style>
@@ -92,12 +92,13 @@
 </head>
 <body>
   <div class="control-panel">
-    <h2>Pattern Manipulator</h2>
+    <h2>Pattern Globe</h2>
     
     <div class="page-toggler">
-      <a href="index.html" id="makerLink" class="page-toggle-button">Maker</a>
-      <a href="manipulator.html" class="page-toggle-button active">Manipulator</a>
-      
+      <a href="index.html" id="makerLink" class="page-toggle-button">Pattern</a>
+      <a href="manipulator.html" class="page-toggle-button active">Globe</a>
+      <a href="globe_spin.html" id="globeSpinLink" class="page-toggle-button">Globe Spin</a>
+      <a href="globe_spin_geo.html" id="globeSpinGeoLink" class="page-toggle-button">Globe Spin Geo</a>
     </div>
 
     <!-- Screen Ratio Control -->
@@ -141,12 +142,6 @@
           <input type="range" id="sphereDiameter" min="10" max="300" value="75">
         </div>
       </div>
-      <div class="manipulator-control-item">
-        <label for="wrapIntensity">Wrap Intensity: <span id="wrapIntensityValue">100</span>%</label>
-        <div class="slider-container">
-          <input type="range" id="wrapIntensity" min="0" max="100" value="100">
-        </div>
-      </div>
     </div>
   </div>
   
@@ -161,7 +156,7 @@
     </div>
   
   <script type="module">
-    console.log('Manipulator script started.'); // LOG SCRIPT START
+    console.log('Globe script started.'); // LOG SCRIPT START
     import { drawHexagonGrid, updateLineLength, BASE_LINE_IDS, updateGlobalLineColor, updateGlobalLineWeight } from './js/omniHexagon.js';
 
     // Storage keys
@@ -177,7 +172,7 @@
     // Globe settings
     let sphereOutlineVisible = true;
     let sphereDiameter = 75;
-    let wrapIntensity = 100;
+    const wrapIntensity = 100; // Hardcoded: Perfect globe
     
     // Pattern settings from omni index
     let currentLinePercentages = {};
@@ -194,8 +189,8 @@
     const sphereOutlineToggle = document.getElementById('sphereOutlineToggle');
     const sphereDiameterSlider = document.getElementById('sphereDiameter');
     const sphereDiameterValue = document.getElementById('sphereDiameterValue');
-    const wrapIntensitySlider = document.getElementById('wrapIntensity');
-    const wrapIntensityValue = document.getElementById('wrapIntensityValue');
+    // const wrapIntensitySlider = document.getElementById('wrapIntensity'); // Removed
+    // const wrapIntensityValue = document.getElementById('wrapIntensityValue'); // Removed
     
     // Line element storage
     const lineElementsMap = new Map();
@@ -204,12 +199,12 @@
     function loadPatternFromOmniIndex() {
       console.log('loadPatternFromOmniIndex called.'); // LOG FUNCTION CALL
       const savedStateString = localStorage.getItem(OMNI_INDEX_STATE_KEY);
-      console.log('Manipulator raw savedStateString from localStorage:', savedStateString); // LOG RAW STRING
+      console.log('Globe raw savedStateString from localStorage:', savedStateString); // LOG RAW STRING
 
       if (savedStateString) {
         try {
           const savedState = JSON.parse(savedStateString);
-          console.log('Manipulator parsed OmniIndexState:', savedState); 
+          console.log('Globe parsed OmniIndexState:', savedState); 
           currentLinePercentages = savedState.currentLinePercentages || {};
           currentGlobalLineColor = savedState.currentGlobalLineColor || '#000000';
           currentGlobalLineWeight = savedState.currentGlobalLineWeight || 1;
@@ -220,9 +215,9 @@
           sphereDiameter = 75;
           sphereDiameterSlider.value = 75;
           sphereDiameterValue.textContent = '75';
-          wrapIntensity = 100;
-          wrapIntensitySlider.value = 100;
-          wrapIntensityValue.textContent = '100';
+          // wrapIntensity is hardcoded to 100
+          // wrapIntensitySlider.value = 100; // Removed
+          // wrapIntensityValue.textContent = '100'; // Removed
           
           return true;
         } catch (e) {
@@ -238,8 +233,8 @@
         hexCount: parseInt(hexCountInput.value, 10),
         aspectRatio: ratioSelect.value,
         sphereOutlineVisible,
-        sphereDiameter,
-        wrapIntensity
+        sphereDiameter
+        // wrapIntensity is hardcoded, no need to save
       };
       localStorage.setItem(M4_STATE_KEY, JSON.stringify(state));
     }
@@ -257,9 +252,9 @@
           sphereDiameter = savedState.sphereDiameter || 75;
           sphereDiameterSlider.value = sphereDiameter;
           sphereDiameterValue.textContent = sphereDiameter;
-          wrapIntensity = savedState.wrapIntensity !== undefined ? savedState.wrapIntensity : 100;
-          wrapIntensitySlider.value = wrapIntensity;
-          wrapIntensityValue.textContent = wrapIntensity;
+          // wrapIntensity is hardcoded
+          // wrapIntensitySlider.value = wrapIntensity; // Removed
+          // wrapIntensityValue.textContent = wrapIntensity; // Removed
           return true;
         } catch (e) {
           console.error('Error loading M4 state:', e);
@@ -327,7 +322,7 @@
       }
       lineElementsMap.clear();
       
-      console.log('Manipulator applying background:', currentBackgroundColor, 'to svg and frame'); // ADDED CONSOLE LOG
+      console.log('Globe applying background:', currentBackgroundColor, 'to svg and frame'); // ADDED CONSOLE LOG
       svg.style.backgroundColor = currentBackgroundColor; // Apply loaded background color
       if (frame) frame.style.backgroundColor = currentBackgroundColor; // Apply to frame as well
       
@@ -377,114 +372,127 @@
       
       const minDimension = Math.min(viewportWidth, viewportHeight);
       const sphereRadius = (minDimension / 2) * (sphereDiameter / 100);
-      
+
       // Helper function to project point onto sphere
-      function projectOntoSphere(point) {
-        const dx = point.x - centerX;
-        const dy = point.y - centerY;
-        const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
-        const normalizedDistance = distanceFromCenter / sphereRadius;
-        
-        if (normalizedDistance > 1) {
-          return { x: centerX, y: centerY, hidden: true };
+      // Returns projected {x, y, z_norm (positive for front), hidden}
+      function projectOntoSphere(point, currentCenterX, currentCenterY, currentSphereRadius) {
+        const dx = point.x - currentCenterX;
+        const dy = point.y - currentCenterY;
+        const distSq = dx * dx + dy * dy;
+
+        // Check if the original flat point is outside the sphere's 2D disk
+        if (distSq > currentSphereRadius * currentSphereRadius) {
+          return { hidden: true, z_norm: -1 }; // Effectively on the back and outside
         }
+
+        const normDistPlane = Math.sqrt(distSq) / currentSphereRadius;
         
-        const nx = dx / sphereRadius;
-        const ny = dy / sphereRadius;
-        const wrapFactor = wrapIntensity / 100;
-        const frontalness = 1 - (nx * nx + ny * ny);
-        
-        if (wrapFactor >= 0.8) {
-          const visibilityThreshold = 0.01 * (wrapFactor <= 0.9 ? 1 : 0);
-          if (frontalness < visibilityThreshold) {
-            return { x: centerX, y: centerY, hidden: true };
-          }
-        }
-        
-        const nz = Math.sqrt(frontalness) * wrapFactor;
-        const scale = 1 / (1 - nz * 0.5);
-        
+        // nz_norm is the normalized z-coordinate on a unit sphere (0 at edge, 1 at center facing viewer)
+        // This can be very small or zero if normDistPlane is 1.
+        const nz_norm = Math.sqrt(Math.max(0, 1 - normDistPlane * normDistPlane)); // Ensure non-negative for sqrt
+
+        // Perspective scaling (mimics original bulge at 100% intensity)
+        // The 0.5 factor controls the amount of perspective/bulge.
+        // Avoid division by zero or very small numbers if nz_norm is close to 2 (not possible here)
+        const scaleDenominator = 1 - nz_norm * 0.5;
+        const scale = scaleDenominator < 0.0001 ? 10000 : 1 / scaleDenominator;
+
+
         return {
-          x: centerX + dx * scale,
-          y: centerY + dy * scale,
+          x: currentCenterX + dx * scale,
+          y: currentCenterY + dy * scale,
+          z_norm: nz_norm, 
           hidden: false
         };
       }
       
-      // Apply wrapping to all lines
       lineElementsMap.forEach((lineData, id) => {
         const { element, originalStart, originalEnd } = lineData;
         
-        // Use the original stored positions, not the current DOM positions
-        const point1 = { x: originalStart.x, y: originalStart.y };
-        const point2 = { x: originalEnd.x, y: originalEnd.y };
-        
-        // If wrap intensity is 0, just clip to sphere boundary
-        if (wrapIntensity === 0) {
-          const distance1 = Math.sqrt(Math.pow(point1.x - centerX, 2) + Math.pow(point1.y - centerY, 2));
-          const distance2 = Math.sqrt(Math.pow(point2.x - centerX, 2) + Math.pow(point2.y - centerY, 2));
-          
-          if (distance1 <= sphereRadius && distance2 <= sphereRadius) {
-            element.setAttribute('stroke-opacity', '1');
-          } else if (distance1 > sphereRadius && distance2 > sphereRadius) {
-            element.setAttribute('stroke-opacity', '0');
-          } else {
-            // Clip line at sphere boundary
-            const insidePoint = distance1 <= sphereRadius ? point1 : point2;
-            const outsidePoint = distance1 <= sphereRadius ? point2 : point1;
-            
-            const dx = outsidePoint.x - insidePoint.x;
-            const dy = outsidePoint.y - insidePoint.y;
-            const cx = insidePoint.x - centerX;
-            const cy = insidePoint.y - centerY;
-            
-            const a = dx * dx + dy * dy;
-            const b = cx * dx + cy * dy;
-            const c = cx * cx + cy * cy - sphereRadius * sphereRadius;
-            
-            const discriminant = b * b - a * c;
-            if (discriminant >= 0) {
-              const t = (-b + Math.sqrt(discriminant)) / a;
-              if (t >= 0 && t <= 1) {
-                const intersectionX = insidePoint.x + t * dx;
-                const intersectionY = insidePoint.y + t * dy;
-                
-                if (distance1 <= sphereRadius) {
-                  element.setAttribute('x1', insidePoint.x);
-                  element.setAttribute('y1', insidePoint.y);
-                  element.setAttribute('x2', intersectionX);
-                  element.setAttribute('y2', intersectionY);
-                } else {
-                  element.setAttribute('x1', intersectionX);
-                  element.setAttribute('y1', intersectionY);
-                  element.setAttribute('x2', insidePoint.x);
-                  element.setAttribute('y2', insidePoint.y);
-                }
-                element.setAttribute('stroke-opacity', '1');
-              } else {
-                element.setAttribute('stroke-opacity', '0');
-              }
-            } else {
-              element.setAttribute('stroke-opacity', '0');
-            }
-          }
+        const p1_orig = { x: originalStart.x, y: originalStart.y };
+        const p2_orig = { x: originalEnd.x, y: originalEnd.y };
+
+        let proj1 = projectOntoSphere(p1_orig, centerX, centerY, sphereRadius);
+        let proj2 = projectOntoSphere(p2_orig, centerX, centerY, sphereRadius);
+
+        const p1_visible = !proj1.hidden && proj1.z_norm >= 0.001; // Use a small epsilon for z_norm
+        const p2_visible = !proj2.hidden && proj2.z_norm >= 0.001;
+
+        if (p1_visible && p2_visible) {
+          element.setAttribute('x1', proj1.x);
+          element.setAttribute('y1', proj1.y);
+          element.setAttribute('x2', proj2.x);
+          element.setAttribute('y2', proj2.y);
+          element.setAttribute('stroke-opacity', '1');
+        } else if (!p1_visible && !p2_visible) {
+          // Both points are hidden or on the back
+          element.setAttribute('stroke-opacity', '0');
         } else {
-          // Apply sphere projection
-          const projectedStart = projectOntoSphere(point1);
-          const projectedEnd = projectOntoSphere(point2);
+          // One point visible, one hidden/back: Clip the line
+          const visibleProj = p1_visible ? proj1 : proj2;
+          const hiddenProj = p1_visible ? proj2 : proj1;
           
-          if (projectedStart.hidden || projectedEnd.hidden) {
-            element.setAttribute('stroke-opacity', '0');
-          } else {
-            element.setAttribute('x1', projectedStart.x);
-            element.setAttribute('y1', projectedStart.y);
-            element.setAttribute('x2', projectedEnd.x);
-            element.setAttribute('y2', projectedEnd.y);
+          // For clipping, we need the original points if projection was 'hidden'
+          // and their z_norm values (actual for visible, effective -1 for hidden)
+          const P_front = { x: visibleProj.x, y: visibleProj.y, z: visibleProj.z_norm };
+          
+          // If hiddenProj was hidden because original point was outside disk,
+          // its x,y for interpolation should be the original point's coordinates
+          // scaled towards the center up to the sphereRadius.
+          // Or, more simply, use the projected coordinates if available, otherwise original.
+          // The z_norm for a point that returned hidden:true is effectively < 0.
+          const P_back_x = hiddenProj.hidden ? (p1_visible ? p2_orig.x : p1_orig.x) : hiddenProj.x;
+          const P_back_y = hiddenProj.hidden ? (p1_visible ? p2_orig.y : p1_orig.y) : hiddenProj.y;
+          const P_back_z = hiddenProj.z_norm < 0.001 ? hiddenProj.z_norm : -0.001; // Ensure it's negative for interpolation
+
+          // Interpolation parameter t for intersection with z=0 plane (approx.)
+          // We are interpolating between the *projected* visible point and a conceptual
+          // back point. The z_norm is used.
+          let t = 0.5; // Default fallback
+          if ((P_front.z - P_back_z) !== 0) {
+             // We want to find where z_norm crosses the threshold (e.g., 0.001)
+            t = (P_front.z - 0.001) / (P_front.z - P_back_z);
+          }
+          
+          t = Math.max(0, Math.min(1, t)); // Clamp t to [0, 1]
+
+          // Interpolate between the *original* points to find the intersection point on the sphere's edge
+          // Then project this intersection point.
+          const intersectOrigX = p1_orig.x + t * (p2_orig.x - p1_orig.x);
+          const intersectOrigY = p1_orig.y + t * (p2_orig.y - p1_orig.y);
+          
+          let intersectProj = projectOntoSphere({x: intersectOrigX, y: intersectOrigY}, centerX, centerY, sphereRadius);
+
+          // If the intersection projection itself is hidden (e.g. due to being slightly outside from float errors)
+          // or its z_norm is too low, then effectively the visible part is tiny or non-existent.
+          // However, it's more robust to use the P_front and interpolate its screen coords.
+          // The t value is based on z_norm, so it should give the screen space intersection.
+
+          const intersectScreenX = visibleProj.x + t * (P_back_x - visibleProj.x);
+          const intersectScreenY = visibleProj.y + t * (P_back_y - visibleProj.y);
+
+
+          if (!intersectProj.hidden && intersectProj.z_norm >= 0.001) {
+            element.setAttribute('x1', visibleProj.x);
+            element.setAttribute('y1', visibleProj.y);
+            // Use the projected intersection point if it's valid
+            element.setAttribute('x2', intersectProj.x);
+            element.setAttribute('y2', intersectProj.y);
             element.setAttribute('stroke-opacity', '1');
+          } else {
+             // Fallback: if intersection projection is not good, use interpolated screen coords
+            element.setAttribute('x1', visibleProj.x);
+            element.setAttribute('y1', visibleProj.y);
+            element.setAttribute('x2', intersectScreenX);
+            element.setAttribute('y2', intersectScreenY);
+            element.setAttribute('stroke-opacity', '1');
+            // Or, if even this is problematic, consider hiding if t is very small.
+            if (t < 0.01 || t > 0.99) { // If intersection is too close to one of the points
+                 // element.setAttribute('stroke-opacity', '0'); // Or just draw the tiny segment
+            }
           }
         }
       });
-      
       drawSphereOutline();
     }
     
@@ -569,7 +577,7 @@
       
       const now = new Date();
       const timestamp = `${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}`;
-      downloadLink.download = `hexagon-pattern_m4-globe-${sphereDiameter}diam-${wrapIntensity}wrap_${timestamp}.svg`;
+      downloadLink.download = `hexagon-pattern_m4-globe-${sphereDiameter}diam_${timestamp}.svg`; // Removed wrapIntensity from filename
       
       document.body.appendChild(downloadLink);
       downloadLink.click();
@@ -588,9 +596,9 @@
         sphereDiameter = 75;
         sphereDiameterSlider.value = 75;
         sphereDiameterValue.textContent = '75';
-        wrapIntensity = 100;
-        wrapIntensitySlider.value = 100;
-        wrapIntensityValue.textContent = '100';
+        // wrapIntensity is hardcoded
+        // wrapIntensitySlider.value = 100; // Removed
+        // wrapIntensityValue.textContent = '100'; // Removed
       }
       
       // Parse initial aspect ratio
@@ -624,12 +632,7 @@
         applyGlobeWrapping();
       });
       
-      wrapIntensitySlider.addEventListener('input', function() {
-        wrapIntensity = parseInt(this.value, 10);
-        wrapIntensityValue.textContent = wrapIntensity;
-        saveM4State();
-        applyGlobeWrapping();
-      });
+      // wrapIntensitySlider event listener removed
       
       exportButton.addEventListener('click', exportSVG);
       

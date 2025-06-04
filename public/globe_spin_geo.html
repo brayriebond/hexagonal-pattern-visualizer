@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Globe Spin Geo</title>
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/omni-style.css">
+  <style>
+    /* Override some styles for this page (similar to manipulator) */
+    .visualization-panel {
+      margin-left: 0;
+      padding: 0;
+      background-color: transparent;
+      border: none;
+      border-radius: 0;
+    }
+    
+    .visualization-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    .visualization-frame {
+      position: relative;
+      border: 1px solid #B6C0C4;
+      border-radius: 5px;
+      overflow: hidden;
+      transition: width 0.3s, height 0.3s;
+    }
+    
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+        
+    .manipulator-controls { /* Re-using class name, but for spin controls too */
+      background-color: #F0F5F7;
+      border: 1px solid #B6C0C4;
+      border-radius: 6px;
+      padding: 12px;
+      width: 100%;
+      margin-top: 15px;
+    }
+    
+    .manipulator-controls h4 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+    
+    .manipulator-control-item {
+      margin-bottom: 12px;
+    }
+    
+    .manipulator-control-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .toggle-container input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      accent-color: #000000;
+    }
+    
+    .sphere-outline {
+      fill: none;
+      stroke: #666;
+      stroke-width: 1;
+      stroke-dasharray: 4 4;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="control-panel">
+    <h2>Pattern Globe</h2>
+    
+    <div class="page-toggler">
+      <a href="index.html" id="makerLink" class="page-toggle-button">Pattern</a>
+      <a href="manipulator.html" id="manipulatorLink" class="page-toggle-button">Globe</a>
+      <a href="globe_spin.html" class="page-toggle-button">Globe Spin</a>
+      <a href="globe_spin_geo.html" id="globeSpinGeoLink" class="page-toggle-button active">Globe Spin Geo</a>
+    </div>
+
+    <!-- Screen Ratio Control -->
+    <div class="background-control">
+      <div class="slider-container">
+        <label for="screenRatio" style="min-width: 100px;">Screen Ratio:</label>
+        <select id="screenRatio" class="color-select" style="flex-grow: 1;">
+          <option value="1:1">1:1 (Square)</option>
+          <option value="3:4">3:4 (Portrait)</option>
+          <option value="4:3">4:3 (Landscape)</option>
+          <option value="2:3">2:3 (Portrait)</option>
+          <option value="3:2">3:2 (Landscape)</option>
+          <option value="9:16">9:16 (Portrait)</option>
+          <option value="16:9">16:9 (Landscape)</option>
+          <option value="1:3">1:3 (Tall Portrait)</option>
+          <option value="3:1">3:1 (Wide Landscape)</option>
+        </select>
+      </div>
+    </div>
+    
+    <!-- Globe Settings (from manipulator) -->
+    <div class="manipulator-controls">
+      <h4>Globe Settings</h4>
+      <div class="manipulator-control-item toggle-container">
+        <label for="sphereOutlineToggle">Sphere Outline:</label>
+        <input type="checkbox" id="sphereOutlineToggle"> 
+      </div>
+      <div class="manipulator-control-item">
+        <label for="sphereDiameter">Sphere Diameter: <span id="sphereDiameterValue">75</span>%</label>
+        <div class="slider-container">
+          <input type="range" id="sphereDiameter" min="10" max="300" value="75">
+        </div>
+      </div>
+    </div>
+
+    <!-- Spin Controls -->
+    <div class="manipulator-controls">
+      <h4>Spin Controls</h4>
+      <div class="manipulator-control-item">
+        <label for="spinSpeed">Spin Speed: <span id="spinSpeedValue">1</span></label>
+        <div class="slider-container">
+          <input type="range" id="spinSpeed" min="0" max="10" value="1" step="0.1">
+        </div>
+      </div>
+      <div class="manipulator-control-item">
+        <label for="spinAxisTilt">Spin Axis Tilt: <span id="spinAxisTiltValue">0</span>°</label>
+        <div class="slider-container">
+          <input type="range" id="spinAxisTilt" min="-90" max="90" value="0" step="5">
+        </div>
+      </div>
+      <div class="manipulator-control-item">
+        <label for="spinDirectionToggle">Spin Direction:</label>
+        <button id="spinDirectionToggle" class="button" style="width: 100%;">Toggle CW/CCW</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="visualization-panel">
+    <div class="visualization-container">
+      <div class="visualization-frame" id="visualizationFrame">
+        <svg id="hexagonSvg" class="pattern-display-area" viewBox="0 0 800 600">
+        </svg>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module">
+    console.log('Globe Spin Geo script started.');
+    import { drawHexagonGrid, updateLineLength, BASE_LINE_IDS } from './js/omniHexagon.js';
+
+    const GLOBE_SPIN_GEO_STATE_KEY = 'globeSpinGeoState';
+    const OMNI_INDEX_STATE_KEY = 'omniIndexState'; 
+    const M4_STATE_KEY = 'manipulatorState'; 
+    
+    const baseHexRadius = 60; 
+    let hexRadius; 
+    let aspectRatio = { width: 1, height: 1 };
+    let lineWidthScale = 1; 
+    let currentHexCountForSizing = 5; 
+    
+    let sphereOutlineVisible = false; 
+    let sphereDiameter = 75; 
+    const wrapIntensity = 100; // Hardcoded: Perfect globe
+
+    let spinSpeed = 1; 
+    let spinAxisTilt = 0; 
+    let spinDirectionMultiplier = 1; 
+
+    let currentRotationAngle = 0; 
+    let animationFrameId = null;
+    let globe3DRadius_global = 100; // Will be updated in setupInitialGlobeModel
+    
+    let currentLinePercentages = {};
+    let currentGlobalLineColor = '#000000';
+    let currentGlobalLineWeight = 1;
+    let currentBackgroundColor = '#FFFFFF';
+    
+    const svg = document.getElementById('hexagonSvg');
+    const frame = document.getElementById('visualizationFrame');
+    const ratioSelect = document.getElementById('screenRatio');
+    
+    const sphereOutlineToggle = document.getElementById('sphereOutlineToggle');
+    const sphereDiameterSlider = document.getElementById('sphereDiameter');
+    const sphereDiameterValue = document.getElementById('sphereDiameterValue');
+
+    const spinSpeedSlider = document.getElementById('spinSpeed');
+    const spinSpeedValue = document.getElementById('spinSpeedValue');
+    const spinAxisTiltSlider = document.getElementById('spinAxisTilt');
+    const spinAxisTiltValue = document.getElementById('spinAxisTiltValue');
+    const spinDirectionToggleButton = document.getElementById('spinDirectionToggle');
+    
+    const lineDataMap = new Map(); 
+    
+    function loadPatternFromOmniIndex() {
+      const savedStateString = localStorage.getItem(OMNI_INDEX_STATE_KEY);
+      if (savedStateString) {
+        try {
+          const savedState = JSON.parse(savedStateString);
+          currentLinePercentages = savedState.currentLinePercentages || {};
+          currentGlobalLineColor = savedState.currentGlobalLineColor || '#000000';
+          currentGlobalLineWeight = savedState.currentGlobalLineWeight || 1;
+          currentBackgroundColor = savedState.currentBackgroundColor || '#FFFFFF';
+          return true;
+        } catch (e) { console.error('Error loading omni index state:', e); }
+      }
+      return false;
+    }
+    
+    function saveSpinState() {
+      const state = { spinSpeed, spinAxisTilt, spinDirectionMultiplier };
+      localStorage.setItem(GLOBE_SPIN_GEO_STATE_KEY, JSON.stringify(state));
+    }
+
+    function saveM4State() {
+        let m4State = {};
+        const m4SavedStateString = localStorage.getItem(M4_STATE_KEY);
+        if (m4SavedStateString) {
+            try { m4State = JSON.parse(m4SavedStateString); } catch (e) { console.error("Error parsing M4 state for saving:", e); }
+        }
+        const manipulatorHexCount = currentHexCountForSizing + 2;
+
+        const updatedM4State = {
+            ...m4State, 
+            aspectRatio: ratioSelect.value,
+            sphereOutlineVisible,
+            sphereDiameter,
+            // wrapIntensity is hardcoded, no longer part of M4 state
+            hexCount: manipulatorHexCount 
+        };
+        localStorage.setItem(M4_STATE_KEY, JSON.stringify(updatedM4State));
+    }
+    
+    function loadGlobeSettingsFromManipulator() {
+        const m4SavedStateString = localStorage.getItem(M4_STATE_KEY);
+        console.log('[GS-Geo] Attempting to load M4 state. String:', m4SavedStateString); // Changed log prefix
+        if (m4SavedStateString) {
+            try {
+                const savedM4State = JSON.parse(m4SavedStateString); 
+                console.log('[GS-Geo] Parsed M4 state:', savedM4State); // Changed log prefix
+                const rawHexCount = savedM4State.hexCount; 
+                console.log('[GS-Geo] M4 hexCount from storage:', rawHexCount, typeof rawHexCount); // Changed log prefix
+
+                ratioSelect.value = savedM4State.aspectRatio || '1:1';
+                aspectRatio = parseRatio(ratioSelect.value);
+                
+                const defaultManipulatorHexCount = 5; 
+                let manipulatorN = (typeof rawHexCount === 'number' && !isNaN(rawHexCount)) ? rawHexCount : defaultManipulatorHexCount;
+                console.log('[GS-Geo] Manipulator N value to use:', manipulatorN); // Changed log prefix
+
+                currentHexCountForSizing = Math.max(1, manipulatorN - 2);
+                currentHexCountForSizing = Math.min(currentHexCountForSizing, 18); 
+                console.log('[GS-Geo] Final currentHexCountForSizing (N-2, capped):', currentHexCountForSizing); // Changed log prefix
+                
+                sphereOutlineVisible = savedM4State.sphereOutlineVisible !== undefined ? savedM4State.sphereOutlineVisible : false; 
+                sphereDiameter = savedM4State.sphereDiameter || 75;
+                
+                sphereOutlineToggle.checked = sphereOutlineVisible;
+                sphereDiameterSlider.value = sphereDiameter;
+                sphereDiameterValue.textContent = sphereDiameter;
+                return true;
+            } catch (e) { console.error('[GS-Geo] Error loading M4 state:', e); } // Changed log prefix
+        } else {
+            console.log('[GS-Geo] No M4 state found.'); // Changed log prefix
+        }
+        currentHexCountForSizing = Math.max(1, 5 - 2); 
+        currentHexCountForSizing = Math.min(currentHexCountForSizing, 18);
+        console.log('[GS-Geo] Using default currentHexCountForSizing:', currentHexCountForSizing); // Changed log prefix
+        sphereOutlineToggle.checked = sphereOutlineVisible; 
+        return false;
+    }
+
+    function loadSpinState() {
+      const savedStateString = localStorage.getItem(GLOBE_SPIN_GEO_STATE_KEY);
+      if (savedStateString) {
+        try {
+          const savedState = JSON.parse(savedStateString);
+          spinSpeed = savedState.spinSpeed !== undefined ? savedState.spinSpeed : 1;
+          spinAxisTilt = savedState.spinAxisTilt !== undefined ? savedState.spinAxisTilt : 0;
+          spinDirectionMultiplier = savedState.spinDirectionMultiplier !== undefined ? savedState.spinDirectionMultiplier : 1;
+        } catch (e) { console.error('Error loading Globe Spin Geo state:', e); }
+      }
+      spinSpeedSlider.value = spinSpeed;
+      spinSpeedValue.textContent = spinSpeed;
+      spinAxisTiltSlider.min = "-90"; 
+      spinAxisTiltSlider.max = "90";
+      spinAxisTiltSlider.step = "5";
+      spinAxisTiltSlider.value = spinAxisTilt; 
+      spinAxisTiltValue.textContent = spinAxisTilt + '°';
+      return Boolean(savedStateString);
+    }
+    
+    function parseRatio(ratioStr) {
+      const parts = ratioStr.split(':');
+      return { width: parseInt(parts[0], 10), height: parseInt(parts[1], 10) };
+    }
+    
+    function updateVisualizationFrame() {
+      const container = document.querySelector('.visualization-container');
+      let frameWidth, frameHeight;
+      if (container.clientWidth / container.clientHeight > aspectRatio.width / aspectRatio.height) {
+        frameHeight = container.clientHeight;
+        frameWidth = frameHeight * (aspectRatio.width / aspectRatio.height);
+      } else {
+        frameWidth = container.clientWidth;
+        frameHeight = frameWidth * (aspectRatio.height / aspectRatio.width);
+      }
+      frame.style.width = `${frameWidth}px`;
+      frame.style.height = `${frameHeight}px`;
+      svg.setAttribute('viewBox', `0 0 ${aspectRatio.width * 100} ${aspectRatio.height * 100}`);
+      setupInitialGlobeModel(); 
+    }
+
+    function calculateHexagonSizingAndScale() {
+        const viewBox = svg.viewBox.baseVal;
+        if (!viewBox) return { hexRadius: 10, lineWidthScale: 1};
+        const viewportWidth = viewBox.width;
+        const countForSizing = (typeof currentHexCountForSizing === 'number' && !isNaN(currentHexCountForSizing)) ? currentHexCountForSizing : 3; 
+        const totalHexagonsForScale = countForSizing + 2; 
+        console.log(`[CalcHS-Geo] viewportWidth=${viewportWidth}, currentHexCountForSizing (N-2)=${countForSizing}, totalHexagonsForScale (N)=${totalHexagonsForScale}`); // Changed log prefix
+        hexRadius = viewportWidth / (totalHexagonsForScale * Math.sqrt(3));
+        console.log(`[CalcHS-Geo] Resulting hexRadius: ${hexRadius}`); // Changed log prefix
+        lineWidthScale = hexRadius / baseHexRadius;
+        return { hexRadius, lineWidthScale };
+    }
+    
+    function setupInitialGlobeModel() {
+      svg.innerHTML = ''; 
+      lineDataMap.clear(); 
+      svg.style.backgroundColor = currentBackgroundColor;
+      if (frame) frame.style.backgroundColor = currentBackgroundColor;
+
+      const { hexRadius: calculatedHexRadius, lineWidthScale: calculatedLineWidthScale } = calculateHexagonSizingAndScale();
+      hexRadius = calculatedHexRadius; 
+      lineWidthScale = calculatedLineWidthScale;
+
+      const viewBox = svg.viewBox.baseVal;
+      if (!viewBox) { console.error("ViewBox not available in setupInitialGlobeModel"); return; }
+      
+      const minDimension = Math.min(viewBox.width, viewBox.height);
+      globe3DRadius_global = (minDimension / 2) * (sphereDiameter / 100); // Update module-level variable
+      const scaledLineWeight = currentGlobalLineWeight * lineWidthScale;
+
+      const drawingViewBox = {
+        x: viewBox.x,
+        y: viewBox.y,
+        width: viewBox.width * 2, 
+        height: viewBox.height
+      };
+      const tempSvgForGrid = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      drawHexagonGrid(tempSvgForGrid, hexRadius, drawingViewBox, currentGlobalLineColor, scaledLineWeight);
+      
+      BASE_LINE_IDS.forEach(baseId => {
+          const percentage = currentLinePercentages[baseId] !== undefined ? currentLinePercentages[baseId] : 100;
+          updateLineLength(baseId, percentage, tempSvgForGrid); 
+      });
+
+      const uniqueSegments = new Set();
+      const precision = 3; 
+      const linesFromTempGrid = tempSvgForGrid.querySelectorAll('line');
+
+      linesFromTempGrid.forEach(tempLineElement => {
+        let x1 = parseFloat(tempLineElement.getAttribute('x1'));
+        let y1 = parseFloat(tempLineElement.getAttribute('y1'));
+        let x2 = parseFloat(tempLineElement.getAttribute('x2'));
+        let y2 = parseFloat(tempLineElement.getAttribute('y2'));
+        const id = tempLineElement.getAttribute('id'); 
+
+        if (!id) { console.warn("Line without ID found in temp grid", tempLineElement); return; }
+
+        const rx1 = parseFloat(x1.toFixed(precision));
+        const ry1 = parseFloat(y1.toFixed(precision));
+        const rx2 = parseFloat(x2.toFixed(precision));
+        const ry2 = parseFloat(y2.toFixed(precision));
+
+        let p1Str, p2Str;
+        if (rx1 < rx2 || (rx1 === rx2 && ry1 < ry2)) {
+            p1Str = `${rx1},${ry1}`; p2Str = `${rx2},${ry2}`;
+        } else {
+            p1Str = `${rx2},${ry2}`; p2Str = `${rx1},${ry1}`;
+        }
+        const segmentKey = `${p1Str}:${p2Str}`;
+
+        if (!uniqueSegments.has(segmentKey)) {
+            uniqueSegments.add(segmentKey);
+            
+        const p1_3D_model = map2DToSphere({x: x1, y: y1}, viewBox, globe3DRadius_global);
+        const p2_3D_model = map2DToSphere({x: x2, y: y2}, viewBox, globe3DRadius_global);
+            
+            const mainSvgLineElement = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            mainSvgLineElement.setAttribute('id', id); 
+            mainSvgLineElement.setAttribute('stroke', currentGlobalLineColor);
+            mainSvgLineElement.setAttribute('stroke-width', scaledLineWeight);
+            svg.appendChild(mainSvgLineElement); 
+
+            lineDataMap.set(segmentKey, { element: mainSvgLineElement, p1_3D_model, p2_3D_model });
+        }
+      });
+      
+      drawSphereOutline(); 
+      if (!animationFrameId) { startAnimation(); }
+    }
+
+    function map2DToSphere(p2d, svgViewBox, radius) { // Renamed globe3DRadius to radius for clarity
+        let u = (p2d.x - svgViewBox.x) / svgViewBox.width;
+        let v = (p2d.y - svgViewBox.y) / svgViewBox.height;
+        const phi = u * Math.PI; 
+        const theta = v * Math.PI;
+        const x_val = radius * Math.sin(theta) * Math.sin(phi); 
+        const y_val = radius * Math.cos(theta);
+        const z_val = radius * Math.sin(theta) * Math.cos(phi); 
+        return { x: x_val, y: y_val, z: z_val, onSphere: true };
+    }
+
+    function projectWithPerspective(point3D, svgCenterX, svgCenterY, radius) {
+        if (point3D.z < 0) { // Back-facing
+            return { screenX: 0, screenY: 0, isVisible: false }; 
+        }
+        const z_norm_for_scale = point3D.z / radius;
+        // Clamp z_norm to prevent issues if point is slightly off sphere or perspective factor is large
+        const clamped_z_norm = Math.min(Math.max(z_norm_for_scale, 0), 0.9999); 
+
+        const perspectiveFactor = 0.3; // Reduced for a gentler bulge, might help horizon
+        const scaleDenominator = 1 - clamped_z_norm * perspectiveFactor;
+        
+        const perspectiveScale = (scaleDenominator < 0.01) ? 100 : 1 / scaleDenominator; // Avoid division by zero or extreme scaling
+        
+        return {
+            screenX: svgCenterX + point3D.x * perspectiveScale,
+            screenY: svgCenterY + point3D.y * perspectiveScale,
+            isVisible: true
+        };
+    }
+
+    function animate() {
+      currentRotationAngle += (spinSpeed * spinDirectionMultiplier * Math.PI / 180) / 10; 
+      const viewBox = svg.viewBox.baseVal;
+      if (!viewBox) { 
+        animationFrameId = requestAnimationFrame(animate); 
+        return;
+      }
+      const svgCenterX = viewBox.width / 2;
+      const svgCenterY = viewBox.height / 2;
+      const model_spin_axis_Y = { x: 0, y: 1, z: 0 };
+      const viewTiltRad = spinAxisTilt * Math.PI / 180;
+      const view_tilt_axis_Z = { x: 0, y: 0, z: 1 };
+
+      lineDataMap.forEach(data => { 
+        const p1_spun = rotatePoint(data.p1_3D_model, model_spin_axis_Y, currentRotationAngle);
+        const p2_spun = rotatePoint(data.p2_3D_model, model_spin_axis_Y, currentRotationAngle);
+        const p1_tilted = rotatePoint(p1_spun, view_tilt_axis_Z, -viewTiltRad);
+        const p2_tilted = rotatePoint(p2_spun, view_tilt_axis_Z, -viewTiltRad);
+        
+        const proj1 = projectWithPerspective(p1_tilted, svgCenterX, svgCenterY, globe3DRadius_global);
+        const proj2 = projectWithPerspective(p2_tilted, svgCenterX, svgCenterY, globe3DRadius_global);
+
+        if (proj1.isVisible && proj2.isVisible) {
+          data.element.setAttribute('x1', proj1.screenX);
+          data.element.setAttribute('y1', proj1.screenY);
+          data.element.setAttribute('x2', proj2.screenX);
+          data.element.setAttribute('y2', proj2.screenY);
+          data.element.setAttribute('stroke-opacity', '1');
+        } else if (!proj1.isVisible && !proj2.isVisible) {
+          data.element.setAttribute('stroke-opacity', '0');
+        } else {
+          // Clipping logic
+          const visible3D = proj1.isVisible ? p1_tilted : p2_tilted;
+          const hidden3D = proj1.isVisible ? p2_tilted : p1_tilted;
+          const visibleProj = proj1.isVisible ? proj1 : proj2;
+
+          // Interpolate in 3D space to find intersection precisely at the z=0 plane (horizon)
+          const clip_z = 0.0; 
+          let t = 0.5; // Default, should be overridden
+          if ((visible3D.z - hidden3D.z) !== 0) { // Avoid division by zero if points have same z
+            // We want to find t such that visible3D.z + t * (hidden3D.z - visible3D.z) = clip_z (which is 0)
+            // t = (clip_z - visible3D.z) / (hidden3D.z - visible3D.z)
+            // t = (0 - visible3D.z) / (hidden3D.z - visible3D.z)
+            // t = -visible3D.z / (hidden3D.z - visible3D.z)
+            // t = visible3D.z / (visible3D.z - hidden3D.z) // This is correct for z_intersect = 0
+            t = visible3D.z / (visible3D.z - hidden3D.z); 
+          }
+          t = Math.max(0, Math.min(1, t)); // Clamp t
+
+          const intersect3D_x = visible3D.x + t * (hidden3D.x - visible3D.x);
+          const intersect3D_y = visible3D.y + t * (hidden3D.y - visible3D.y);
+          const intersect3D_z = visible3D.z + t * (hidden3D.z - visible3D.z); // This will be clip_z
+          
+          const intersectProj = projectWithPerspective({x: intersect3D_x, y: intersect3D_y, z: intersect3D_z}, svgCenterX, svgCenterY, globe3DRadius_global);
+
+          if(intersectProj.isVisible) { // Should always be true if clip_z > 0
+            data.element.setAttribute('x1', visibleProj.screenX);
+            data.element.setAttribute('y1', visibleProj.screenY);
+            data.element.setAttribute('x2', intersectProj.screenX);
+            data.element.setAttribute('y2', intersectProj.screenY);
+            data.element.setAttribute('stroke-opacity', '1');
+          } else {
+            // This case should ideally not be hit if clipping plane is handled correctly
+            data.element.setAttribute('stroke-opacity', '0');
+          }
+        }
+      });
+      drawSphereOutline(); 
+      animationFrameId = requestAnimationFrame(animate);
+    }
+
+    function rotatePoint(point, axis, angle) { 
+        const cosA = Math.cos(angle);
+        const sinA = Math.sin(angle);
+        const { x, y, z } = point;
+        const u_ax = axis.x; 
+        const v_ax = axis.y;
+        const w_ax = axis.z;
+        const dotProduct = u_ax * x + v_ax * y + w_ax * z;
+        const x_rot = u_ax * dotProduct * (1 - cosA) + x * cosA + (-w_ax * y + v_ax * z) * sinA;
+        const y_rot = v_ax * dotProduct * (1 - cosA) + y * cosA + ( w_ax * x - u_ax * z) * sinA;
+        const z_rot = w_ax * dotProduct * (1 - cosA) + z * cosA + (-v_ax * x + u_ax * y) * sinA;
+        return { x: x_rot, y: y_rot, z: z_rot };
+    }
+
+    function startAnimation() {
+      if (animationFrameId) { cancelAnimationFrame(animationFrameId); }
+      animationFrameId = requestAnimationFrame(animate);
+    }
+
+    function stopAnimation() {
+      if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+    }
+    
+    function drawSphereOutline() { 
+      const existingOutline = svg.querySelector('.sphere-outline');
+      if (existingOutline) { existingOutline.remove(); }
+      if (!sphereOutlineVisible) return;
+      const viewBox = svg.viewBox.baseVal;
+      if (!viewBox) return; 
+      const centerX = viewBox.width / 2;
+      const centerY = viewBox.height / 2;
+      const minDimension = Math.min(viewBox.width, viewBox.height);
+      const sphereRadius = (minDimension / 2) * (sphereDiameter / 100);
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', centerX);
+      circle.setAttribute('cy', centerY);
+      circle.setAttribute('r', sphereRadius);
+      circle.setAttribute('class', 'sphere-outline');
+      svg.appendChild(circle); 
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPatternFromOmniIndex(); 
+      if (!loadGlobeSettingsFromManipulator()) {
+        aspectRatio = parseRatio(ratioSelect.value); 
+        sphereOutlineToggle.checked = sphereOutlineVisible; 
+      }
+      loadSpinState(); 
+
+      spinAxisTiltSlider.min = "-90";
+      spinAxisTiltSlider.max = "90";
+      spinAxisTiltSlider.step = "5"; 
+      spinAxisTiltSlider.value = spinAxisTilt; 
+      spinAxisTiltValue.textContent = spinAxisTilt + '°';
+
+      ratioSelect.addEventListener('change', function() {
+        aspectRatio = parseRatio(this.value);
+        saveM4State(); 
+        updateVisualizationFrame(); 
+      });
+      sphereOutlineToggle.addEventListener('change', function() {
+        sphereOutlineVisible = this.checked;
+        saveM4State(); 
+        drawSphereOutline(); 
+      });
+      sphereDiameterSlider.addEventListener('input', function() {
+        sphereDiameter = parseInt(this.value, 10);
+        sphereDiameterValue.textContent = sphereDiameter;
+        saveM4State(); 
+        setupInitialGlobeModel(); 
+      });
+      
+      spinSpeedSlider.addEventListener('input', function() {
+        spinSpeed = parseFloat(this.value);
+        spinSpeedValue.textContent = spinSpeed;
+        saveSpinState();
+      });
+      spinAxisTiltSlider.addEventListener('input', function() {
+        spinAxisTilt = parseInt(this.value, 10);
+        spinAxisTiltValue.textContent = spinAxisTilt + '°';
+        saveSpinState();
+      });
+      spinDirectionToggleButton.addEventListener('click', function() {
+        spinDirectionMultiplier *= -1;
+        saveSpinState();
+      });
+      document.getElementById('makerLink')?.addEventListener('click', () => { saveM4State(); saveSpinState(); });
+      document.getElementById('manipulatorLink')?.addEventListener('click', () => { saveM4State(); saveSpinState(); });
+      document.getElementById('globeSpinGeoLink')?.addEventListener('click', () => { saveM4State(); saveSpinState(); }); // Added for consistency
+      updateVisualizationFrame(); 
+      window.addEventListener('resize', () => updateVisualizationFrame());
+    });
+  </script>
+</body>
+</html>

@@ -43,10 +43,10 @@ function getPointAlongLine(p1, p2, ratio) {
     };
 }
 
-export function updateLineLength(baseLineId, percentage) {
+export function updateLineLength(baseLineId, percentage, svgContext = document) {
     originalLineData.forEach((data, uniqueLineId) => {
         if (uniqueLineId.endsWith(`-${baseLineId}`)) { 
-            const lineElement = document.getElementById(uniqueLineId);
+            const lineElement = svgContext.getElementById ? svgContext.getElementById(uniqueLineId) : svgContext.querySelector(`#${uniqueLineId}`);
             if (!lineElement) return;
 
             const { originalP1, originalP2 } = data;

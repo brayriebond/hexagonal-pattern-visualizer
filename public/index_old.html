@@ -287,7 +287,7 @@
       </div>
       
       <button class="randomize-button" id="exportButton" style="width: 100%; margin-bottom: 8px;">Export as SVG</button>
-      <button class="randomize-button" id="openManipulatorButton" style="width: 100%;">Open Shape Manipulator</button>
+      <button class="randomize-button" id="openManipulatorButton" style="width: 100%;">Open Shape Globe</button>
     </div>
     
     <div class="background-control">
@@ -1436,7 +1436,7 @@
         updateRedThickness(value);
       });
       
-      // Set up event listener for Open Shape Manipulator button
+      // Set up event listener for Open Shape Globe button
       document.getElementById('openManipulatorButton').addEventListener('click', function() {
         // Save current pattern settings to localStorage
         const patternSettings = {
@@ -1466,7 +1466,7 @@
         
         localStorage.setItem('hexagonPattern', JSON.stringify(patternSettings));
         
-        // Navigate to the manipulator page
+        // Navigate to the Globe page
         window.location.href = 'manipulator.html';
       });
       

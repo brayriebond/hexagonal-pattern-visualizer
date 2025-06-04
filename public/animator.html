@@ -12,8 +12,9 @@
     <h2>Pattern Animator</h2>
     
     <div class="page-toggler">
-      <a href="index.html" id="makerLink" class="page-toggle-button">Maker</a>
-      <a href="manipulator.html" id="manipulatorLink" class="page-toggle-button">Manipulator</a>
+      <a href="index.html" id="makerLink" class="page-toggle-button">Pattern</a>
+      <a href="manipulator.html" id="manipulatorLink" class="page-toggle-button">Globe</a>
+      <a href="globe_spin.html" id="globeSpinLink" class="page-toggle-button">Globe Spin</a>
       <a href="animator.html" class="page-toggle-button active">Animator</a>
     </div>
 
@@ -47,7 +48,7 @@
     <script type="module">
     import { drawHexagonGrid, updateLineLength, BASE_LINE_IDS, updateGlobalLineColor, updateGlobalLineWeight, getLineColor, getLineWeight } from './js/omniHexagon.js';
 
-    const OMNI_INDEX_STATE_KEY = 'omniIndexState'; // Key to load initial state from Maker
+    const OMNI_INDEX_STATE_KEY = 'omniIndexState'; // Key to load initial state from Pattern
     const defaultHexRadius = 80;
     const viewBoxData = { x: -400, y: -300, width: 800, height: 600 };
     const svgContainer = document.getElementById('animatorSvg');
@@ -154,7 +155,7 @@
         if (savedStateString) {
             try {
                 const savedState = JSON.parse(savedStateString);
-                console.log('Animator loading initial state from Maker/Manipulator:', savedState);
+                console.log('Animator loading initial state from Pattern/Globe:', savedState);
                 
                 currentHexRadius = savedState.hexagonSize || defaultHexRadius;
                 lockedLineWeight = savedState.currentGlobalLineWeight || 1;
@@ -175,9 +176,9 @@
                 console.error('Error loading state for Animator:', e);
             }
         } else {
-            console.warn('No initial state found for Animator. Please set a pattern in Maker first.');
+            console.warn('No initial state found for Animator. Please set a pattern in Pattern first.');
             startAnimationButton.disabled = true;
-            startAnimationButton.textContent = 'Setup Pattern in Maker';
+            startAnimationButton.textContent = 'Setup Pattern in Pattern';
         }
         return false;
     }
@@ -310,7 +311,7 @@
     function resetAnimation() {
         isAnimating = false;
         startAnimationButton.disabled = !initialGridState; // Disable if no initial state
-        startAnimationButton.textContent = initialGridState ? "Start Animation" : "Setup Pattern in Maker";
+        startAnimationButton.textContent = initialGridState ? "Start Animation" : "Setup Pattern in Pattern";
         if (animationInterval) {
             clearTimeout(animationInterval);
             animationInterval = null;
