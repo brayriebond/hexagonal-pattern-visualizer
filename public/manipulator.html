@@ -555,13 +555,54 @@
       backgroundRect.setAttribute('fill', currentBackgroundColor);
       exportSvg.appendChild(backgroundRect);
       
-      // Clone visible lines only
+      const uniqueLines = new Set();
+      const getLineKey = (x1, y1, x2, y2, precision = 3) => {
+          const p = Math.pow(10, precision);
+          const round = val => Math.round(val * p) / p;
+          const rX1 = round(x1);
+          const rY1 = round(y1);
+          const rX2 = round(x2);
+          const rY2 = round(y2);
+          if (rX1 < rX2 || (rX1 === rX2 && rY1 < rY2)) {
+              return `${rX1},${rY1},${rX2},${rY2}`;
+          } else {
+              return `${rX2},${rY2},${rX1},${rY1}`;
+          }
+      };
+
+      // Add unique visible lines
       Array.from(svg.children).forEach(child => {
         if (!child.classList.contains('sphere-outline') && child.tagName === 'line') {
           const opacity = parseFloat(child.getAttribute('stroke-opacity') || '1');
           if (opacity > 0) {
-            const clonedNode = child.cloneNode(true);
-            exportSvg.appendChild(clonedNode);
+            const x1 = parseFloat(child.getAttribute('x1'));
+            const y1 = parseFloat(child.getAttribute('y1'));
+            const x2 = parseFloat(child.getAttribute('x2'));
+            const y2 = parseFloat(child.getAttribute('y2'));
+            const stroke = child.getAttribute('stroke');
+            const strokeWidth = child.getAttribute('stroke-width');
+            const strokeLinecap = child.getAttribute('stroke-linecap'); // Preserve linecap if set
+
+            // Only add if it's a non-zero length line
+            if (Math.abs(x1 - x2) > 0.001 || Math.abs(y1 - y2) > 0.001) {
+                const lineKey = getLineKey(x1, y1, x2, y2);
+                if (!uniqueLines.has(lineKey)) {
+                    uniqueLines.add(lineKey);
+                    const newLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    newLine.setAttribute('x1', x1.toFixed(3));
+                    newLine.setAttribute('y1', y1.toFixed(3));
+                    newLine.setAttribute('x2', x2.toFixed(3));
+                    newLine.setAttribute('y2', y2.toFixed(3));
+                    newLine.setAttribute('stroke', stroke);
+                    newLine.setAttribute('stroke-width', strokeWidth);
+                    if (strokeLinecap) { // Add linecap if it exists on original
+                        newLine.setAttribute('stroke-linecap', strokeLinecap);
+                    } else { // Default to round if not present (as in index.html)
+                        newLine.setAttribute('stroke-linecap', 'round');
+                    }
+                    exportSvg.appendChild(newLine);
+                }
+            }
           }
         }
       });
