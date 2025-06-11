@@ -1030,100 +1030,184 @@
     });
 
     function handleSvgDownload() {
-        const numHexagonsWide = parseInt(document.getElementById('hexagonsWideInput').value) || 1;
-        const numHexagonsTall = parseInt(document.getElementById('hexagonsTallInput').value) || 1;
-        
-        const currentHexRadius = FIXED_HEX_RADIUS; // Use fixed radius for download
-        // Use currentGlobalLineColor and currentBackgroundColor for accuracy
-        const finalGlobalStrokeColor = currentGlobalLineColor; 
+        const numHexagonsWideUser = parseInt(document.getElementById('hexagonsWideInput').value) || 1;
+        const numHexagonsTallUser = parseInt(document.getElementById('hexagonsTallInput').value) || 1;
+
+        const R = FIXED_HEX_RADIUS;
+        const finalGlobalStrokeColor = currentGlobalLineColor;
         const finalBackgroundColor = currentBackgroundColor;
-        
-        // globalLineWeightSlider stores index, currentGlobalLineWeight has the actual value
-        const finalGlobalStrokeWeight = currentGlobalLineWeight; 
-        
-        console.log(`Downloading SVG: ${numHexagonsWide}x${numHexagonsTall}, R=${currentHexRadius}, LineColor=${finalGlobalStrokeColor}, BGColor=${finalBackgroundColor}, Weight=${finalGlobalStrokeWeight}`);
+        const finalGlobalStrokeWeight = currentGlobalLineWeight;
 
-        const R = currentHexRadius;
-        const hexGridItemWidth = R * Math.sqrt(3); 
-        const hexGridItemHeight = R * 2;         
+        const BUFFER_HEX_COUNT = 2; // Number of buffer hexagons on each side
+        const numHexagonsWideTotal = numHexagonsWideUser + (BUFFER_HEX_COUNT * 2);
+        const numHexagonsTallTotal = numHexagonsTallUser + (BUFFER_HEX_COUNT * 2);
+
+        const hexGridItemWidth = R * Math.sqrt(3);
+        const hexGridItemHeight = R * 2;
         const horizSpacing = hexGridItemWidth;
-        const vertSpacing = hexGridItemHeight * 0.75; 
+        const vertSpacing = hexGridItemHeight * 0.75;
 
-        const padding = R * 0.25; 
-        let totalSvgWidth = padding * 2;
-        if (numHexagonsWide > 0) {
-            totalSvgWidth += (numHexagonsWide - 1) * horizSpacing + hexGridItemWidth;
-            if (numHexagonsTall > 1 && numHexagonsWide > 0) { 
-                totalSvgWidth = Math.max(totalSvgWidth, ((numHexagonsWide - 0.5) * horizSpacing) + hexGridItemWidth );
+        console.log(`Downloading SVG: User specified ${numHexagonsWideUser}x${numHexagonsTallUser}, viewBox focuses on user grid, total content ${numHexagonsWideTotal}x${numHexagonsTallTotal}.`);
+
+        // Calculate dimensions for the user-defined artboard / viewBox
+        const artboardVisualPadding = R * 0.1; // Small visual padding INSIDE the artboard
+
+        let viewBoxWidth = artboardVisualPadding * 2;
+        if (numHexagonsWideUser > 0) {
+            const baseUserWidth = (numHexagonsWideUser - 1) * horizSpacing + hexGridItemWidth;
+            viewBoxWidth += baseUserWidth;
+            if (numHexagonsTallUser > 1) { // If multiple user rows, a staggered row can increase total span
+                const staggeredUserWidth = ((numHexagonsWideUser - 0.5) * horizSpacing) + hexGridItemWidth;
+                // Ensure the artboardVisualPadding is outside the max of these two calculations
+                viewBoxWidth = Math.max(baseUserWidth, staggeredUserWidth) + artboardVisualPadding * 2;
             }
+        } else { // No user hexagons wide
+            viewBoxWidth = artboardVisualPadding * 2;
         }
-        
-        let totalSvgHeight = padding * 2;
-        if (numHexagonsTall > 0) {
-            totalSvgHeight += (numHexagonsTall - 1) * vertSpacing + hexGridItemHeight;
+        if (numHexagonsWideUser === 1 && numHexagonsTallUser > 1) { // Special case for single column, multiple rows
+             viewBoxWidth = hexGridItemWidth + artboardVisualPadding * 2;
         }
-        
-        let svgElements = '';
 
-        const templateLines = [];
-        if (svgContainer) { 
-            const linesInOnScreenSvg = svgContainer.querySelectorAll('line');
-            linesInOnScreenSvg.forEach(line => {
-                const x1 = parseFloat(line.getAttribute('x1'));
-                const y1 = parseFloat(line.getAttribute('y1'));
-                const x2 = parseFloat(line.getAttribute('x2'));
-                const y2 = parseFloat(line.getAttribute('y2'));
-                const sw = parseFloat(line.getAttribute('stroke-width'));
-                const opacity = line.getAttribute('stroke-opacity');
-                const displayStyle = window.getComputedStyle(line).display;
 
-                if (sw > 0 && 
-                    (opacity === null || opacity !== '0') && 
-                    displayStyle !== 'none' &&
-                    (Math.abs(x1 - x2) > 0.001 || Math.abs(y1 - y2) > 0.001) // Check for non-zero-length lines with a tolerance
-                ) {
-                    templateLines.push({ x1: x1, y1: y1, x2: x2, y2: y2 });
+        let viewBoxHeight = artboardVisualPadding * 2;
+        if (numHexagonsTallUser > 0) {
+            viewBoxHeight += (numHexagonsTallUser - 1) * vertSpacing + hexGridItemHeight;
+        } else { // No user hexagons tall
+            viewBoxHeight = artboardVisualPadding * 2;
+        }
+
+        // Determine the minX, minY for the viewBox to center the user-defined grid
+        // The user-defined grid starts at (BUFFER_HEX_COUNT, BUFFER_HEX_COUNT) in the total grid
+        const firstUserHexGridCol = BUFFER_HEX_COUNT;
+        const firstUserHexGridRow = BUFFER_HEX_COUNT;
+
+        // Calculate center of the first hexagon in the USER-DEFINED grid portion
+        // (relative to the (0,0) origin of the total buffered content)
+        const centerX_of_first_user_hex = (firstUserHexGridCol * horizSpacing) + (firstUserHexGridRow % 2 !== 0 ? horizSpacing / 2 : 0) + (hexGridItemWidth / 2);
+        const centerY_of_first_user_hex = (firstUserHexGridRow * vertSpacing) + (hexGridItemHeight / 2); // which is R
+
+        // The viewBox should start at the top-left extent of this first user hexagon, adjusted by artboardVisualPadding
+        const viewBoxMinX = centerX_of_first_user_hex - (hexGridItemWidth / 2) - artboardVisualPadding;
+        const viewBoxMinY = centerY_of_first_user_hex - (hexGridItemHeight / 2) - artboardVisualPadding;
+
+        // --- Canonical Hexagon Geometry (centered at 0,0) ---
+        const BASE_HEX_GEOMETRY = {};
+        const getPoint = (radius, angleDegrees) => {
+            const angleRadians = (angleDegrees - 90) * Math.PI / 180;
+            return { x: radius * Math.cos(angleRadians), y: radius * Math.sin(angleRadians) };
+        };
+
+        const corners = {
+            p12: getPoint(R, 0), p2: getPoint(R, 60), p4: getPoint(R, 120),
+            p6: getPoint(R, 180), p8: getPoint(R, 240), p10: getPoint(R, 300)
+        };
+        const edgeMidpoints = {
+            p1: getPoint(R * Math.sqrt(3) / 2, 30), p3: getPoint(R * Math.sqrt(3) / 2, 90),
+            p5: getPoint(R * Math.sqrt(3) / 2, 150), p7: getPoint(R * Math.sqrt(3) / 2, 210),
+            p9: getPoint(R * Math.sqrt(3) / 2, 270), p11: getPoint(R * Math.sqrt(3) / 2, 330)
+        };
+        const center = { x: 0, y: 0 };
+
+        BASE_LINE_IDS.forEach(id => {
+            const parts = id.split('-'); // e.g., "border", "p12", "p2" OR "spoke", "c", "p1"
+            if (parts[0] === "border") {
+                BASE_HEX_GEOMETRY[id] = { p1: corners[parts[1]], p2: corners[parts[2]] };
+            } else if (parts[0] === "spoke" && parts[1] === "c") {
+                const endPointKey = parts[2];
+                BASE_HEX_GEOMETRY[id] = { p1: center, p2: corners[endPointKey] || edgeMidpoints[endPointKey] };
+            }
+        });
+        // --- End Canonical Hexagon Geometry ---
+
+        // --- Helper to get scaled lines for a canonical hexagon ---
+        const getScaledLinesForHexagon = (baseGeom, linePercentages) => {
+            const scaledLines = [];
+            for (const baseId in baseGeom) {
+                if (linePercentages.hasOwnProperty(baseId)) {
+                    const { p1: originalP1, p2: originalP2 } = baseGeom[baseId];
+                    const percentage = linePercentages[baseId];
+                    const scale = percentage / 100;
+
+                    let p1Scaled, p2Scaled;
+                    if (scale === 0) {
+                        const midX = (originalP1.x + originalP2.x) / 2;
+                        const midY = (originalP1.y + originalP2.y) / 2;
+                        p1Scaled = { x: midX, y: midY };
+                        p2Scaled = { x: midX, y: midY };
+                    } else {
+                        const gapRatio = (1 - scale) / 2;
+                        const getPtAlong = (ptA, ptB, ratio) => ({
+                            x: ptA.x + (ptB.x - ptA.x) * ratio,
+                            y: ptA.y + (ptB.y - ptA.y) * ratio
+                        });
+                        p1Scaled = getPtAlong(originalP1, originalP2, gapRatio);
+                        p2Scaled = getPtAlong(originalP2, originalP1, gapRatio);
+                    }
+                     // Only add if it's a visible line
+                    if (Math.abs(p1Scaled.x - p2Scaled.x) > 0.001 || Math.abs(p1Scaled.y - p2Scaled.y) > 0.001) {
+                        scaledLines.push({ x1: p1Scaled.x, y1: p1Scaled.y, x2: p2Scaled.x, y2: p2Scaled.y });
+                    }
                 }
-            });
+            }
+            return scaledLines;
+        };
+        // --- End Helper ---
+
+        let svgElements = '';
+        const uniqueLines = new Set();
+        const getLineKey = (x1, y1, x2, y2, precision = 3) => {
+            const p = Math.pow(10, precision);
+            const round = val => Math.round(val * p) / p;
+            const rX1 = round(x1); const rY1 = round(y1);
+            const rX2 = round(x2); const rY2 = round(y2);
+            return (rX1 < rX2 || (rX1 === rX2 && rY1 < rY2)) ? `${rX1},${rY1},${rX2},${rY2}` : `${rX2},${rY2},${rX1},${rY1}`;
+        };
+
+        const canonicalScaledLines = getScaledLinesForHexagon(BASE_HEX_GEOMETRY, currentLinePercentages);
+
+        if (canonicalScaledLines.length === 0) {
+            console.warn("No lines generated from canonical hexagon with current percentages.");
         }
 
-        if (templateLines.length === 0) {
-            console.warn("No visible, non-zero-length lines found in the on-screen SVG to use as a template for download.");
-        }
-        
-        for (let row = 0; row < numHexagonsTall; row++) {
-            for (let col = 0; col < numHexagonsWide; col++) {
-                const offsetX = col * horizSpacing + (row % 2 === 1 ? horizSpacing / 2 : 0);
-                const offsetY = row * vertSpacing;
-                
-                const groupTranslateX = padding + offsetX + (R * Math.sqrt(3) / 2); 
-                const groupTranslateY = padding + offsetY + R;    
+        // Iterate over the total grid size (user + buffer)
+        for (let row = 0; row < numHexagonsTallTotal; row++) {
+            for (let col = 0; col < numHexagonsWideTotal; col++) {
+                // Calculate center of this hexagon in the grid
+                // Calculate center of this hexagon in the grid (absolute coordinates from (0,0) of total content)
+                const hexCenterX = (col * horizSpacing) + (row % 2 !== 0 ? horizSpacing / 2 : 0) + (hexGridItemWidth / 2);
+                const hexCenterY = (row * vertSpacing) + (hexGridItemHeight / 2); // which is R
 
-                let groupContent = `<g transform="translate(${groupTranslateX.toFixed(3)}, ${groupTranslateY.toFixed(3)})">\n`;
+                canonicalScaledLines.forEach(lineDef => {
+                    const absX1 = hexCenterX + lineDef.x1;
+                    const absY1 = hexCenterY + lineDef.y1;
+                    const absX2 = hexCenterX + lineDef.x2;
+                    const absY2 = hexCenterY + lineDef.y2;
 
-                templateLines.forEach(lineDef => {
-                    // Use finalGlobalStrokeColor and finalGlobalStrokeWeight
-                    groupContent += `  <line x1="${lineDef.x1}" y1="${lineDef.y1}" x2="${lineDef.x2}" y2="${lineDef.y2}" stroke="${finalGlobalStrokeColor}" stroke-width="${finalGlobalStrokeWeight}" stroke-linecap="round" />\n`;
+                    const lineKey = getLineKey(absX1, absY1, absX2, absY2);
+                    if (!uniqueLines.has(lineKey)) {
+                        uniqueLines.add(lineKey);
+                        svgElements += `  <line x1="${absX1.toFixed(3)}" y1="${absY1.toFixed(3)}" x2="${absX2.toFixed(3)}" y2="${absY2.toFixed(3)}" stroke="${finalGlobalStrokeColor}" stroke-width="${finalGlobalStrokeWeight}" stroke-linecap="round" />\n`;
+                    }
                 });
-                groupContent += `</g>\n`;
-                svgElements += groupContent;
             }
         }
+
+        // Background rectangle covers only the viewBox area (artboard)
+        const backgroundRect = `<rect x="${viewBoxMinX.toFixed(3)}" y="${viewBoxMinY.toFixed(3)}" width="${viewBoxWidth.toFixed(3)}" height="${viewBoxHeight.toFixed(3)}" fill="${finalBackgroundColor}" />\n`;
         
-        // Add background rectangle
-        const backgroundRect = `<rect width="${totalSvgWidth.toFixed(3)}" height="${totalSvgHeight.toFixed(3)}" fill="${finalBackgroundColor}" />\n`;
-        const finalSvgString = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<svg width="${totalSvgWidth.toFixed(3)}" height="${totalSvgHeight.toFixed(3)}" viewBox="0 0 ${totalSvgWidth.toFixed(3)} ${totalSvgHeight.toFixed(3)}" xmlns="http://www.w3.org/2000/svg">\n${backgroundRect}${svgElements}</svg>`;
+        // SVG dimensions are based on the viewBox (artboard), viewBox defines the window into the larger content
+        const finalSvgString = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<svg width="${viewBoxWidth.toFixed(3)}" height="${viewBoxHeight.toFixed(3)}" viewBox="${viewBoxMinX.toFixed(3)} ${viewBoxMinY.toFixed(3)} ${viewBoxWidth.toFixed(3)} ${viewBoxHeight.toFixed(3)}" xmlns="http://www.w3.org/2000/svg">\n${backgroundRect}${svgElements}</svg>`;
 
         const blob = new Blob([finalSvgString], { type: 'image/svg+xml' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `hexagon_pattern_grid_${numHexagonsWide}x${numHexagonsTall}.svg`;
+        a.download = `hexagon_pattern_grid_${numHexagonsWideUser}x${numHexagonsTallUser}_buffered.svg`; // Added _buffered to filename
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
-  </script>
+    </script>
 </body>
 </html>
