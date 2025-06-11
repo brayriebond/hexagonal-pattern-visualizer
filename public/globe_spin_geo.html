@@ -94,38 +94,9 @@
       <a href="globe_spin_geo.html" id="globeSpinGeoLink" class="page-toggle-button active">Globe Spin Geo</a>
     </div>
 
-    <!-- Screen Ratio Control -->
-    <div class="background-control">
-      <div class="slider-container">
-        <label for="screenRatio" style="min-width: 100px;">Screen Ratio:</label>
-        <select id="screenRatio" class="color-select" style="flex-grow: 1;">
-          <option value="1:1">1:1 (Square)</option>
-          <option value="3:4">3:4 (Portrait)</option>
-          <option value="4:3">4:3 (Landscape)</option>
-          <option value="2:3">2:3 (Portrait)</option>
-          <option value="3:2">3:2 (Landscape)</option>
-          <option value="9:16">9:16 (Portrait)</option>
-          <option value="16:9">16:9 (Landscape)</option>
-          <option value="1:3">1:3 (Tall Portrait)</option>
-          <option value="3:1">3:1 (Wide Landscape)</option>
-        </select>
-      </div>
-    </div>
+    <!-- Screen Ratio Control (REMOVED) -->
     
-    <!-- Globe Settings (from manipulator) -->
-    <div class="manipulator-controls">
-      <h4>Globe Settings</h4>
-      <div class="manipulator-control-item toggle-container">
-        <label for="sphereOutlineToggle">Sphere Outline:</label>
-        <input type="checkbox" id="sphereOutlineToggle"> 
-      </div>
-      <div class="manipulator-control-item">
-        <label for="sphereDiameter">Sphere Diameter: <span id="sphereDiameterValue">75</span>%</label>
-        <div class="slider-container">
-          <input type="range" id="sphereDiameter" min="10" max="300" value="75">
-        </div>
-      </div>
-    </div>
+    <!-- Globe Settings (REMOVED from this page) -->
 
     <!-- Spin Controls -->
     <div class="manipulator-controls">
@@ -177,13 +148,13 @@
     const M4_STATE_KEY = 'manipulatorState'; 
     
     const baseHexRadius = 60; 
-    let hexRadius; 
-    let aspectRatio = { width: 1, height: 1 };
-    let lineWidthScale = 1; 
-    let currentHexCountForSizing = 5; 
+    let hexRadius;
+    const aspectRatio = { width: 1, height: 1 }; // Hardcoded to 1:1
+    let lineWidthScale = 1;
+    let currentHexCountForSizing = 5;
     
-    let sphereOutlineVisible = false; 
-    let sphereDiameter = 75; 
+    const sphereOutlineVisible = false; // Fixed: Outline hidden for this page
+    const sphereDiameter = 75; // Fixed: Diameter for this page
     const wrapIntensity = 100; // Hardcoded: Perfect globe
 
     let spinSpeed = 1; 
@@ -201,11 +172,11 @@
     
     const svg = document.getElementById('hexagonSvg');
     const frame = document.getElementById('visualizationFrame');
-    const ratioSelect = document.getElementById('screenRatio');
+    // const ratioSelect = document.getElementById('screenRatio'); // REMOVED
     
-    const sphereOutlineToggle = document.getElementById('sphereOutlineToggle');
-    const sphereDiameterSlider = document.getElementById('sphereDiameter');
-    const sphereDiameterValue = document.getElementById('sphereDiameterValue');
+    // const sphereOutlineToggle = document.getElementById('sphereOutlineToggle'); // REMOVED - HTML is gone
+    // const sphereDiameterSlider = document.getElementById('sphereDiameter'); // REMOVED - HTML is gone
+    // const sphereDiameterValue = document.getElementById('sphereDiameterValue'); // REMOVED - HTML is gone
 
     const spinSpeedSlider = document.getElementById('spinSpeed');
     const spinSpeedValue = document.getElementById('spinSpeedValue');
@@ -251,12 +222,12 @@
         const manipulatorHexCount = currentHexCountForSizing + 2;
 
         const updatedM4State = {
-            ...m4State, 
-            aspectRatio: ratioSelect.value,
-            sphereOutlineVisible,
-            sphereDiameter,
+            ...m4State,
+            // aspectRatio: ratioSelect.value, // REMOVED - aspect ratio is fixed
+            // sphereOutlineVisible, // REMOVED - fixed for this page
+            // sphereDiameter, // REMOVED - fixed for this page
             // wrapIntensity is hardcoded, no longer part of M4 state
-            hexCount: manipulatorHexCount 
+            hexCount: manipulatorHexCount
         };
         localStorage.setItem(M4_STATE_KEY, JSON.stringify(updatedM4State));
     }
@@ -271,32 +242,30 @@
                 const rawHexCount = savedM4State.hexCount; 
                 console.log('[GS-Geo] M4 hexCount from storage:', rawHexCount, typeof rawHexCount); // Changed log prefix
 
-                ratioSelect.value = savedM4State.aspectRatio || '1:1';
-                aspectRatio = parseRatio(ratioSelect.value);
+                // ratioSelect.value = savedM4State.aspectRatio || '1:1'; // REMOVED
+                // aspectRatio is already hardcoded to { width: 1, height: 1 }
                 
-                const defaultManipulatorHexCount = 5; 
+                const defaultManipulatorHexCount = 5;
                 let manipulatorN = (typeof rawHexCount === 'number' && !isNaN(rawHexCount)) ? rawHexCount : defaultManipulatorHexCount;
                 console.log('[GS-Geo] Manipulator N value to use:', manipulatorN); // Changed log prefix
 
                 currentHexCountForSizing = Math.max(1, manipulatorN - 2);
-                currentHexCountForSizing = Math.min(currentHexCountForSizing, 18); 
+                currentHexCountForSizing = Math.min(currentHexCountForSizing, 18);
                 console.log('[GS-Geo] Final currentHexCountForSizing (N-2, capped):', currentHexCountForSizing); // Changed log prefix
                 
-                sphereOutlineVisible = savedM4State.sphereOutlineVisible !== undefined ? savedM4State.sphereOutlineVisible : false; 
-                sphereDiameter = savedM4State.sphereDiameter || 75;
-                
-                sphereOutlineToggle.checked = sphereOutlineVisible;
-                sphereDiameterSlider.value = sphereDiameter;
-                sphereDiameterValue.textContent = sphereDiameter;
+                // sphereOutlineVisible is fixed to false for this page
+                // sphereDiameter is fixed to 75 for this page
+                // No need to load or set UI elements for them
                 return true;
             } catch (e) { console.error('[GS-Geo] Error loading M4 state:', e); } // Changed log prefix
         } else {
-            console.log('[GS-Geo] No M4 state found.'); // Changed log prefix
+            console.log('[GS-Geo] No M4 state found, using fixed defaults for globe settings.'); // Changed log prefix
         }
-        currentHexCountForSizing = Math.max(1, 5 - 2); 
+        // Default currentHexCountForSizing if no M4 state
+        currentHexCountForSizing = Math.max(1, 5 - 2);
         currentHexCountForSizing = Math.min(currentHexCountForSizing, 18);
         console.log('[GS-Geo] Using default currentHexCountForSizing:', currentHexCountForSizing); // Changed log prefix
-        sphereOutlineToggle.checked = sphereOutlineVisible; 
+        // sphereOutlineToggle.checked = sphereOutlineVisible; // REMOVED
         return false;
     }
 
@@ -320,10 +289,10 @@
       return Boolean(savedStateString);
     }
     
-    function parseRatio(ratioStr) {
-      const parts = ratioStr.split(':');
-      return { width: parseInt(parts[0], 10), height: parseInt(parts[1], 10) };
-    }
+    // function parseRatio(ratioStr) { // No longer needed as aspectRatio is fixed
+    //   const parts = ratioStr.split(':');
+    //   return { width: parseInt(parts[0], 10), height: parseInt(parts[1], 10) };
+    // }
     
     function updateVisualizationFrame() {
       const container = document.querySelector('.visualization-container');
@@ -576,12 +545,12 @@
     }
     
     document.addEventListener('DOMContentLoaded', () => {
-      loadPatternFromOmniIndex(); 
+      loadPatternFromOmniIndex();
       if (!loadGlobeSettingsFromManipulator()) {
-        aspectRatio = parseRatio(ratioSelect.value); 
-        sphereOutlineToggle.checked = sphereOutlineVisible; 
+        // aspectRatio is already hardcoded
+        // sphereOutlineToggle.checked = sphereOutlineVisible; // REMOVED
       }
-      loadSpinState(); 
+      loadSpinState();
 
       spinAxisTiltSlider.min = "-90";
       spinAxisTiltSlider.max = "90";
@@ -589,22 +558,22 @@
       spinAxisTiltSlider.value = spinAxisTilt; 
       spinAxisTiltValue.textContent = spinAxisTilt + '°';
 
-      ratioSelect.addEventListener('change', function() {
-        aspectRatio = parseRatio(this.value);
-        saveM4State(); 
-        updateVisualizationFrame(); 
-      });
-      sphereOutlineToggle.addEventListener('change', function() {
-        sphereOutlineVisible = this.checked;
-        saveM4State(); 
-        drawSphereOutline(); 
-      });
-      sphereDiameterSlider.addEventListener('input', function() {
-        sphereDiameter = parseInt(this.value, 10);
-        sphereDiameterValue.textContent = sphereDiameter;
-        saveM4State(); 
-        setupInitialGlobeModel(); 
-      });
+      // ratioSelect.addEventListener('change', function() { // REMOVED
+      //   aspectRatio = parseRatio(this.value);
+      //   saveM4State();
+      //   updateVisualizationFrame();
+      // });
+      // sphereOutlineToggle.addEventListener('change', function() { // REMOVED
+      //   sphereOutlineVisible = this.checked;
+      //   saveM4State();
+      //   drawSphereOutline();
+      // });
+      // sphereDiameterSlider.addEventListener('input', function() { // REMOVED
+      //   sphereDiameter = parseInt(this.value, 10);
+      //   sphereDiameterValue.textContent = sphereDiameter;
+      //   saveM4State();
+      //   setupInitialGlobeModel();
+      // });
       
       spinSpeedSlider.addEventListener('input', function() {
         spinSpeed = parseFloat(this.value);

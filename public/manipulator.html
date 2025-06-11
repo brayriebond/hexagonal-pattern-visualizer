@@ -141,6 +141,9 @@
           <input type="range" id="sphereDiameter" min="10" max="300" value="75">
         </div>
       </div>
+      <div class="manipulator-control-item" style="margin-top: 8px;">
+        <button id="resetSphereDiameterButton" class="button reset-defaults-button" style="width: 100%;">Reset Diameter to 75%</button>
+      </div>
     </div>
   </div>
   
@@ -645,6 +648,17 @@
       aspectRatio = parseRatio(ratioSelect.value);
       
       // Set up event listeners
+      const resetSphereDiameterButton = document.getElementById('resetSphereDiameterButton');
+      if (resetSphereDiameterButton) {
+        resetSphereDiameterButton.addEventListener('click', () => {
+          sphereDiameter = 75;
+          if(sphereDiameterSlider) sphereDiameterSlider.value = 75;
+          if(sphereDiameterValue) sphereDiameterValue.textContent = '75';
+          saveM4State();
+          applyGlobeWrapping();
+        });
+      }
+
       hexCountInput.addEventListener('change', function() {
         const value = parseInt(this.value, 10);
         if (value < 1) this.value = 1;
