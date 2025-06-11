@@ -20,9 +20,9 @@
     <!-- Global Hexagon Size Control -->
     <div class="background-control" style="margin-top: 15px;">
       <div class="slider-container">
-        <label for="hexagonSizeSlider" style="min-width: 100px;">Hexagon Size:</label>
-        <input type="range" id="hexagonSizeSlider" min="40" max="160" value="80" step="5">
-        <span id="hexagonSizeValue" class="value-display" style="min-width: 40px;">80</span>
+        <label for="zoomSlider" style="min-width: 100px;">Zoom:</label>
+        <input type="range" id="zoomSlider" min="0.5" max="2.0" value="1.0" step="0.1">
+        <span id="zoomValue" class="value-display" style="min-width: 40px;">1.0x</span>
       </div>
     </div>
 
@@ -178,11 +178,11 @@
     import { drawHexagonGrid, updateLineLength, BASE_LINE_IDS, updateGlobalLineColor, updateGlobalLineWeight } from './js/omniHexagon.js';
 
     const OMNI_INDEX_STATE_KEY = 'omniIndexState';
-    const defaultHexRadius = 80;
-    const viewBoxData = { x: -400, y: -300, width: 800, height: 600 };
-    const svgContainer = document.getElementById('omniVisualizationSvg'); 
-    const hexagonSizeSlider = document.getElementById('hexagonSizeSlider');
-    const hexagonSizeValueDisplay = document.getElementById('hexagonSizeValue');
+    const FIXED_HEX_RADIUS = 75; // Renamed, actual hexagon size is fixed
+    const initialViewBox = { x: -400, y: -300, width: 800, height: 600 }; // Used as base for 1.0x zoom
+    const svgContainer = document.getElementById('omniVisualizationSvg');
+    const zoomSlider = document.getElementById('zoomSlider'); // Renamed
+    const zoomValueDisplay = document.getElementById('zoomValue'); // Renamed
     const globalLineColorSelect = document.getElementById('globalLineColorSelect');
     const lockLineColorCheckbox = document.getElementById('lockLineColor'); 
     const globalLineWeightSlider = document.getElementById('globalLineWeightSlider');
@@ -226,7 +226,8 @@
     let isLineWeightLocked = true; 
     let isBackgroundColorLocked = DEFAULT_BACKGROUND_LOCK;
     let isCustomizerExpanded = false; // Default to collapsed
-    let currentActiveTabId = 'bars'; 
+    let currentActiveTabId = 'bars';
+    let currentZoom = 1.0; // Added for zoom state
 
     const customizerHeader = document.getElementById('customizerHeader');
     const customizerContent = document.getElementById('customizerContent');
@@ -453,10 +454,12 @@
     function resetAllSettingsToDefaults() { // Renamed
         console.log('Resetting ALL settings to defaults...');
 
-        // Reset Hexagon Size
-        if (hexagonSizeSlider) hexagonSizeSlider.value = defaultHexRadius;
-        if (hexagonSizeValueDisplay) hexagonSizeValueDisplay.textContent = defaultHexRadius;
-        // Redraw will be called later, which handles applying the size
+        // Reset Zoom
+        currentZoom = 1.0;
+        if (zoomSlider) zoomSlider.value = currentZoom;
+        if (zoomValueDisplay) zoomValueDisplay.textContent = `${currentZoom.toFixed(1)}x`;
+        if (svgContainer) svgContainer.setAttribute('viewBox', `${initialViewBox.x} ${initialViewBox.y} ${initialViewBox.width} ${initialViewBox.height}`);
+        // No redraw needed for zoom reset, only viewBox change.
 
         currentGlobalLineColor = '#000000';
         updateGlobalLineColor(currentGlobalLineColor); 
@@ -498,14 +501,29 @@
         if (backgroundColorSelect) backgroundColorSelect.value = currentBackgroundColor;
         if (lockBackgroundColorCheckbox) lockBackgroundColorCheckbox.checked = isBackgroundColorLocked;
         if (svgContainer) svgContainer.style.backgroundColor = currentBackgroundColor;
+
+    // IMPORTANT for State Management (likely in functions defined after the current visible code):
+    // 1. `saveOmniIndexState()`:
+    //    - Must be updated to save `currentZoom` (e.g., `state.zoomLevel = currentZoom;`)
+    //    - Remove any saving of the old hexagon size.
+    // 2. `loadOmniIndexState()`:
+    //    - Must be updated to load `currentZoom` (e.g., `state.zoomLevel`).
+    //    - Apply the loaded zoom level to `zoomSlider.value`, `zoomValueDisplay.textContent`, and `currentZoom`.
+    //    - Critically, it must recalculate and set the SVG `viewBox` based on the loaded `currentZoom` and `initialViewBox`.
+    //    - Remove any loading/application of the old hexagon size.
+    //    - If no zoom level is in saved state, default to 1.0x and apply the initialViewBox.
+    // 3. Initial Drawing:
+    //    - The main call to `drawHexagonGrid(...)` should use `FIXED_HEX_RADIUS` (which is 75).
+    //      e.g., `drawHexagonGrid(svgContainer, initialViewBox, FIXED_HEX_RADIUS);`
+    //      This function is called once to draw the pattern; zoom only changes the view.
         
         // Set slider to correct index for the currentGlobalLineWeight
         const weightIndex = allowedLineWeights.indexOf(currentGlobalLineWeight);
         if (globalLineWeightSlider) globalLineWeightSlider.value = weightIndex !== -1 ? weightIndex : 0;
         if (globalLineWeightValueDisplay) globalLineWeightValueDisplay.textContent = currentGlobalLineWeight.toFixed(1); // Ensure display is for the value
 
-        // Redraw the grid with the new default size and reset line lengths
-        redrawGridAndUpdateControls(defaultHexRadius, false); 
+        // Redraw the grid with the fixed size and reset line lengths
+        redrawGridAndUpdateControls(FIXED_HEX_RADIUS, false);
         // Note: redrawGridAndUpdateControls will repopulate tab controls, which will set sliders to 100%
         // and currentLinePercentages will be reset if preserveLengths is false.
 
@@ -521,7 +539,8 @@
     function redrawGridAndUpdateControls(radius, preserveLengths = false) {
         if (svgContainer) {
             if (!preserveLengths) BASE_LINE_IDS.forEach(id => currentLinePercentages[id] = 100);
-            drawHexagonGrid(svgContainer, radius, viewBoxData, currentGlobalLineColor, currentGlobalLineWeight);
+            // Draw with FIXED_HEX_RADIUS and initialViewBox. Zoom is handled by SVG's viewBox attribute directly.
+            drawHexagonGrid(svgContainer, FIXED_HEX_RADIUS, initialViewBox, currentGlobalLineColor, currentGlobalLineWeight);
             BASE_LINE_IDS.forEach(baseId => updateLineLength(baseId, currentLinePercentages[baseId]));
             ['stars', 'bars'].forEach(tabId => { 
                 const tabElement = document.getElementById(tabId);
@@ -722,10 +741,10 @@
             currentPresetColorOption, 
             isCustomizerExpanded, // Save customizer state
             currentActiveTabId: document.querySelector('.tab-button.active')?.dataset.tab || 'bars',
-            currentLinePercentages: { ...currentLinePercentages }, 
-            hexagonSize: parseInt(hexagonSizeSlider.value, 10),
+            currentLinePercentages: { ...currentLinePercentages },
+            zoomLevel: currentZoom, // Changed from hexagonSize
             presetValue: presetSelect.value,
-            presetColorValue: presetColorSelect.value 
+            presetColorValue: presetColorSelect.value
         };
         localStorage.setItem(OMNI_INDEX_STATE_KEY, JSON.stringify(state));
         console.log('Omni Index state saved:', state);
@@ -764,8 +783,18 @@
                 });
                 // The Object.assign was removed as the loop above handles it more safely.
 
-                hexagonSizeSlider.value = savedState.hexagonSize || defaultHexRadius;
-                hexagonSizeValueDisplay.textContent = hexagonSizeSlider.value;
+                currentZoom = savedState.zoomLevel || 1.0;
+                if (zoomSlider) zoomSlider.value = currentZoom;
+                if (zoomValueDisplay) zoomValueDisplay.textContent = `${currentZoom.toFixed(1)}x`;
+
+                // Apply loaded zoom to SVG viewBox
+                if (svgContainer) {
+                    const newViewBoxX = initialViewBox.x / currentZoom;
+                    const newViewBoxY = initialViewBox.y / currentZoom;
+                    const newViewBoxWidth = initialViewBox.width / currentZoom;
+                    const newViewBoxHeight = initialViewBox.height / currentZoom;
+                    svgContainer.setAttribute('viewBox', `${newViewBoxX} ${newViewBoxY} ${newViewBoxWidth} ${newViewBoxHeight}`);
+                }
                 
                 globalLineColorSelect.value = currentGlobalLineColor;
                 lockLineColorCheckbox.checked = isLineColorLocked;
@@ -813,7 +842,7 @@
                 const paneToActivate = document.getElementById(currentActiveTabId);
                 if (paneToActivate) paneToActivate.classList.add('active');
                 
-                redrawGridAndUpdateControls(parseInt(hexagonSizeSlider.value, 10), true); 
+                redrawGridAndUpdateControls(FIXED_HEX_RADIUS, true);
                 return true;
             } catch (e) { console.error('Error loading Omni Index state:', e); }
         }
@@ -822,9 +851,12 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         if (!loadOmniIndexState()) { // Apply defaults if no saved state or loading failed
-            hexagonSizeSlider.value = defaultHexRadius; 
-            hexagonSizeValueDisplay.textContent = defaultHexRadius;
-            BASE_LINE_IDS.forEach(id => currentLinePercentages[id] = 100); 
+            currentZoom = 1.0;
+            if (zoomSlider) zoomSlider.value = currentZoom;
+            if (zoomValueDisplay) zoomValueDisplay.textContent = `${currentZoom.toFixed(1)}x`;
+            if (svgContainer) svgContainer.setAttribute('viewBox', `${initialViewBox.x} ${initialViewBox.y} ${initialViewBox.width} ${initialViewBox.height}`);
+            
+            BASE_LINE_IDS.forEach(id => currentLinePercentages[id] = 100);
             currentGlobalLineColor = '#000000'; 
             currentGlobalLineWeight = allowedLineWeights[0]; // Default to 1.0
             currentBackgroundColor = DEFAULT_BACKGROUND_COLOR;
@@ -865,23 +897,32 @@
             const barsPane = document.getElementById('bars'); if (barsPane) barsPane.classList.add('active');
             document.querySelector('.tab-button[data-tab="stars"]')?.classList.remove('active');
             const starsPane = document.getElementById('stars'); if (starsPane) starsPane.classList.remove('active');
-            redrawGridAndUpdateControls(defaultHexRadius, false); 
+            redrawGridAndUpdateControls(FIXED_HEX_RADIUS, false);
         }
-        hexagonSizeSlider.addEventListener('input', function() {
-            const newRadius = parseInt(this.value);
-            hexagonSizeValueDisplay.textContent = newRadius;
-            redrawGridAndUpdateControls(newRadius, true); 
-            if (presetSelect.value !== "none") {
-                presetSelect.value = "none";
-                if (presetColorSelect) {
-                    presetColorSelect.value = "none";
-                    presetColorSelect.disabled = true;
+
+        // Event listener for the new zoomSlider
+        if (zoomSlider) {
+            zoomSlider.addEventListener('input', function() {
+                currentZoom = parseFloat(this.value);
+                if (zoomValueDisplay) {
+                    zoomValueDisplay.textContent = `${currentZoom.toFixed(1)}x`;
                 }
-                currentPresetColorOption = "none";
-                updatePresetSelectAppearance("none");
-            }
-            saveOmniIndexState();
-        });
+
+                const newViewBoxX = initialViewBox.x / currentZoom;
+                const newViewBoxY = initialViewBox.y / currentZoom;
+                const newViewBoxWidth = initialViewBox.width / currentZoom;
+                const newViewBoxHeight = initialViewBox.height / currentZoom;
+                
+                const newViewBoxString = `${newViewBoxX} ${newViewBoxY} ${newViewBoxWidth} ${newViewBoxHeight}`;
+
+                if (svgContainer) {
+                    svgContainer.setAttribute('viewBox', newViewBoxString);
+                }
+                saveOmniIndexState();
+            });
+        }
+        // Old hexagonSizeSlider event listener REMOVED.
+
         globalLineColorSelect.addEventListener('change', function() {
             currentGlobalLineColor = this.value;
             updateGlobalLineColor(currentGlobalLineColor);
@@ -992,7 +1033,7 @@
         const numHexagonsWide = parseInt(document.getElementById('hexagonsWideInput').value) || 1;
         const numHexagonsTall = parseInt(document.getElementById('hexagonsTallInput').value) || 1;
         
-        const currentHexRadius = parseInt(hexagonSizeSlider.value);
+        const currentHexRadius = FIXED_HEX_RADIUS; // Use fixed radius for download
         // Use currentGlobalLineColor and currentBackgroundColor for accuracy
         const finalGlobalStrokeColor = currentGlobalLineColor; 
         const finalBackgroundColor = currentBackgroundColor;
