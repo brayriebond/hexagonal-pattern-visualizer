@@ -100,9 +100,24 @@ export function updateGlobalLineWeight(newWeight) {
 
 export function drawHexagonGrid(svgContainer, hexRadius, viewBox, globalLineColor, globalLineWeight) {
     svgContainer.innerHTML = '';
-    originalLineData.clear();
-    currentGlobalStrokeColor = globalLineColor; 
+    originalLineData.clear(); // Still clear this, it's for original definitions
+    currentGlobalStrokeColor = globalLineColor;
     currentGlobalStrokeWidth = globalLineWeight;
+
+    const renderedScreenLines = new Set(); // Cache for de-duplicating lines on screen
+    const getLineKey = (x1, y1, x2, y2, precision = 3) => {
+        const p = Math.pow(10, precision);
+        const round = val => Math.round(val * p) / p;
+        const rX1 = round(x1);
+        const rY1 = round(y1);
+        const rX2 = round(x2);
+        const rY2 = round(y2);
+        if (rX1 < rX2 || (rX1 === rX2 && rY1 < rY2)) {
+            return `${rX1},${rY1},${rX2},${rY2}`;
+        } else {
+            return `${rX2},${rY2},${rX1},${rY1}`;
+        }
+    };
 
     const hexWidth = hexRadius * Math.sqrt(3);
     const hexHeight = hexRadius * 2;
@@ -147,7 +162,20 @@ export function drawHexagonGrid(svgContainer, hexRadius, viewBox, globalLineColo
 
             const addLineToSvg = (p_1, p_2, baseId) => {
                 const uniqueId = `hex-${gridR}-${gridC}-${baseId}`;
-                svgContainer.appendChild(createLineElement(p_1.x, p_1.y, p_2.x, p_2.y, uniqueId, currentGlobalStrokeColor, currentGlobalStrokeWidth));
+                // originalLineData stores the definition of all lines, even if not rendered due to duplication
+                // This is important for updateLineLength to function correctly based on percentages.
+                // createLineElement internally calls originalLineData.set()
+                const lineElementForData = createLineElement(p_1.x, p_1.y, p_2.x, p_2.y, uniqueId, currentGlobalStrokeColor, currentGlobalStrokeWidth);
+
+                const lineKey = getLineKey(p_1.x, p_1.y, p_2.x, p_2.y);
+                if (!renderedScreenLines.has(lineKey)) {
+                    renderedScreenLines.add(lineKey);
+                    // We use the lineElementForData which already has all attributes set by createLineElement
+                    svgContainer.appendChild(lineElementForData);
+                } else {
+                    // Line is a duplicate, not added to DOM.
+                    // originalLineData still has its definition from createLineElement call.
+                }
             };
 
             BASE_LINE_IDS.forEach((baseId, index) => {
