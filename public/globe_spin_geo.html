@@ -433,9 +433,13 @@
     }
 
     function animate() {
-      currentRotationAngle += (spinSpeed * spinDirectionMultiplier * Math.PI / 180) / 10; 
+      currentRotationAngle += (spinSpeed * spinDirectionMultiplier * Math.PI / 180) / 10;
+      // Normalize currentRotationAngle to the range [0, 2 * PI)
+      const TWO_PI = 2 * Math.PI;
+      currentRotationAngle = ((currentRotationAngle % TWO_PI) + TWO_PI) % TWO_PI;
+
       const viewBox = svg.viewBox.baseVal;
-      if (!viewBox) { 
+      if (!viewBox) {
         animationFrameId = requestAnimationFrame(animate); 
         return;
       }
