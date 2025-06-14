@@ -32,6 +32,10 @@
       /* background-color: #FFFFFF; */ /* Controlled by JavaScript now */
       overflow: hidden;
       transition: width 0.3s, height 0.3s;
+      max-width: 800px;
+      max-height: 800px;
+      aspect-ratio: 1 / 1;
+      background: #fff;
     }
     
     svg {
@@ -99,23 +103,7 @@
       <a href="manipulator.html" class="page-toggle-button active">Globe</a>
     </div>
 
-    <!-- Screen Ratio Control -->
-    <div class="background-control">
-      <div class="slider-container">
-        <label for="screenRatio" style="min-width: 100px;">Screen Ratio:</label>
-        <select id="screenRatio" class="color-select" style="flex-grow: 1;">
-          <option value="1:1">1:1 (Square)</option>
-          <option value="3:4">3:4 (Portrait)</option>
-          <option value="4:3">4:3 (Landscape)</option>
-          <option value="2:3">2:3 (Portrait)</option>
-          <option value="3:2">3:2 (Landscape)</option>
-          <option value="9:16">9:16 (Portrait)</option>
-          <option value="16:9">16:9 (Landscape)</option>
-          <option value="1:3">1:3 (Tall Portrait)</option>
-          <option value="3:1">3:1 (Wide Landscape)</option>
-        </select>
-      </div>
-    </div>
+<!-- Screen Ratio Control removed -->
     
     <!-- Pattern Size Control -->
     <div class="background-control">
@@ -130,10 +118,7 @@
     <!-- Globe Settings -->
     <div class="manipulator-controls">
       <h4>Globe Settings</h4>
-      <div class="manipulator-control-item toggle-container">
-        <label for="sphereOutlineToggle">Sphere Outline:</label>
-        <input type="checkbox" id="sphereOutlineToggle" checked>
-      </div>
+      <!-- Sphere Outline toggle removed -->
       <div class="manipulator-control-item">
         <label for="sphereDiameter">Sphere Diameter: <span id="sphereDiameterValue">75</span>%</label>
         <div class="slider-container">
@@ -149,7 +134,7 @@
     <div class="visualization-panel">
       <div class="visualization-container">
         <div class="visualization-frame" id="visualizationFrame">
-          <svg id="hexagonSvg" class="pattern-display-area" viewBox="0 0 800 600">
+          <svg id="hexagonSvg" class="pattern-display-area" viewBox="0 0 800 800">
             <!-- Hexagon grid will be drawn here -->
           </svg>
         </div>
@@ -167,11 +152,9 @@
     // Configuration
     const baseHexRadius = 60;
     let hexRadius;
-    let aspectRatio = { width: 1, height: 1 };
     let lineWidthScale = 1;
     
     // Globe settings
-    let sphereOutlineVisible = true;
     let sphereDiameter = 75;
     const wrapIntensity = 100; // Hardcoded: Perfect globe
     
@@ -185,9 +168,9 @@
     const svg = document.getElementById('hexagonSvg');
     const frame = document.getElementById('visualizationFrame');
     const hexCountInput = document.getElementById('hexCount');
-    const ratioSelect = document.getElementById('screenRatio');
+    // const ratioSelect = document.getElementById('screenRatio'); // Removed
     const exportButton = document.getElementById('exportButton');
-    const sphereOutlineToggle = document.getElementById('sphereOutlineToggle');
+    // const sphereOutlineToggle = document.getElementById('sphereOutlineToggle'); // Removed
     const sphereDiameterSlider = document.getElementById('sphereDiameter');
     const sphereDiameterValue = document.getElementById('sphereDiameterValue');
     // const wrapIntensitySlider = document.getElementById('wrapIntensity'); // Removed
@@ -232,8 +215,6 @@
     function saveM4State() {
       const state = {
         hexCount: parseInt(hexCountInput.value, 10),
-        aspectRatio: ratioSelect.value,
-        sphereOutlineVisible,
         sphereDiameter
         // wrapIntensity is hardcoded, no need to save
       };
@@ -247,9 +228,6 @@
         try {
           const savedState = JSON.parse(savedStateString);
           hexCountInput.value = savedState.hexCount || 5;
-          ratioSelect.value = savedState.aspectRatio || '1:1';
-          sphereOutlineVisible = savedState.sphereOutlineVisible !== undefined ? savedState.sphereOutlineVisible : true;
-          sphereOutlineToggle.checked = sphereOutlineVisible;
           sphereDiameter = savedState.sphereDiameter || 75;
           sphereDiameterSlider.value = sphereDiameter;
           sphereDiameterValue.textContent = sphereDiameter;
@@ -264,36 +242,19 @@
       return false;
     }
     
-    // Parse ratio string
-    function parseRatio(ratioStr) {
-      const parts = ratioStr.split(':');
-      return {
-        width: parseInt(parts[0], 10),
-        height: parseInt(parts[1], 10)
-      };
-    }
-    
     // Update visualization frame
     function updateVisualizationFrame() {
       const container = document.querySelector('.visualization-container');
       const containerWidth = container.clientWidth;
       const containerHeight = container.clientHeight;
-      
-      let frameWidth, frameHeight;
-      
-      if (containerWidth / containerHeight > aspectRatio.width / aspectRatio.height) {
-        frameHeight = containerHeight;
-        frameWidth = frameHeight * (aspectRatio.width / aspectRatio.height);
-      } else {
-        frameWidth = containerWidth;
-        frameHeight = frameWidth * (aspectRatio.height / aspectRatio.width);
-      }
-      
-      frame.style.width = `${frameWidth}px`;
-      frame.style.height = `${frameHeight}px`;
-      
-      svg.setAttribute('viewBox', `0 0 ${aspectRatio.width * 100} ${aspectRatio.height * 100}`);
-      
+
+      // Always use square aspect ratio
+      const frameSize = Math.min(containerWidth, containerHeight);
+      frame.style.width = `${frameSize}px`;
+      frame.style.height = `${frameSize}px`;
+
+      svg.setAttribute('viewBox', `0 0 800 800`);
+
       initVisualization();
     }
     
@@ -497,31 +458,7 @@
       drawSphereOutline();
     }
     
-    // Draw sphere outline
-    function drawSphereOutline() {
-      const existingOutline = svg.querySelector('.sphere-outline');
-      if (existingOutline) {
-        existingOutline.remove();
-      }
-      
-      if (!sphereOutlineVisible) return;
-      
-      const viewBox = svg.viewBox.baseVal;
-      const viewportWidth = viewBox.width;
-      const viewportHeight = viewBox.height;
-      const centerX = viewportWidth / 2;
-      const centerY = viewportHeight / 2;
-      
-      const minDimension = Math.min(viewportWidth, viewportHeight);
-      const sphereRadius = (minDimension / 2) * (sphereDiameter / 100);
-      
-      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      circle.setAttribute('cx', centerX);
-      circle.setAttribute('cy', centerY);
-      circle.setAttribute('r', sphereRadius);
-      circle.setAttribute('class', 'sphere-outline');
-      svg.appendChild(circle);
-    }
+    // Draw sphere outline removed
     
     // Export SVG
     function exportSVG() {
@@ -644,7 +581,7 @@
       }
       
       // Parse initial aspect ratio
-      aspectRatio = parseRatio(ratioSelect.value);
+      // aspectRatio = parseRatio(ratioSelect.value); // Removed, always square
       
       // Set up event listeners
       const resetSphereDiameterButton = document.getElementById('resetSphereDiameterButton');
@@ -665,19 +602,7 @@
         saveM4State();
         initVisualization();
       });
-      
-      ratioSelect.addEventListener('change', function() {
-        aspectRatio = parseRatio(this.value);
-        saveM4State();
-        updateVisualizationFrame();
-      });
-      
-      sphereOutlineToggle.addEventListener('change', function() {
-        sphereOutlineVisible = this.checked;
-        saveM4State();
-        drawSphereOutline();
-      });
-      
+
       sphereDiameterSlider.addEventListener('input', function() {
         sphereDiameter = parseInt(this.value, 10);
         sphereDiameterValue.textContent = sphereDiameter;
