@@ -19,29 +19,6 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// GitHub webhook endpoint
-app.post('/git', (req, res) => {
-  console.log('Received webhook from GitHub');
-  
-  if (req.headers['x-github-event'] === 'push') {
-    console.log('Push event detected, pulling latest changes...');
-    
-    exec('git pull origin main', (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Git pull error: ${error}`);
-        return res.status(500).send('Failed to pull changes');
-      }
-      
-      console.log(`Git pull output: ${stdout}`);
-      if (stderr) console.error(`Git pull stderr: ${stderr}`);
-      
-      return res.status(200).send('Successfully pulled changes');
-    });
-  } else {
-    return res.status(200).send('Received non-push event');
-  }
-});
-
 // API routes
 app.get('/api/data', (req, res) => {
   // Sample data for visualization
@@ -58,4 +35,4 @@ app.get('/api/data', (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
-}); 
+});
